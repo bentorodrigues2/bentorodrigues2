@@ -1,0 +1,6 @@
+{
+  "name": "CondoManager AI 1",
+  "description": "Um ERP multi-condomínio robusto em PT-PT com conciliação automatizada por IA e gestão de ocorrências.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
