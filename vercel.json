@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "ignoreCommand": "echo 'Ignoring backend (server.ts, express, sharp)'"
+}
