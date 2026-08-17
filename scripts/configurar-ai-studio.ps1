@@ -1,4 +1,4 @@
-Write-Host "=== CONFIGURAR AI STUDIO (4 PASSOS) ==="
+Write-Host "=== CONFIGURAR AI STUDIO (3 PASSOS) ==="
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Resolve-Path "$root\.."
@@ -6,27 +6,20 @@ $frontend = "$projectRoot\frontend"
 $src = "$frontend\src"
 $aistudioFolder = "$src\aistudio"
 
-# 1) Criar pasta aistudio se não existir
-if (!(Test-Path $aistudioFolder)) {
-    New-Item -ItemType Directory -Path $aistudioFolder | Out-Null
-}
-
-# 1) Criar AIStudioApp.tsx
+# 1) Criar wrapper AIStudioApp.tsx
 $wrapperFile = "$aistudioFolder\AIStudioApp.tsx"
+
 $wrapperContent = @"
-import React from "react";
-import { AIStudioRouter } from "./src/router";
+import { RouterProvider } from "react-router-dom";
+import router from "./src/router";
 
 export default function AIStudioApp() {
-  return (
-    <div style={{ width: "100%", height: "100vh", overflow: "hidden" }}>
-      <AIStudioRouter />
-    </div>
-  );
+  return <RouterProvider router={router} />;
 }
 "@
 
 $wrapperContent | Set-Content $wrapperFile -Encoding UTF8
+Write-Host "Wrapper criado."
 
 # 2) Inserir rota no App.tsx
 $appFile = "$src\App.tsx"
@@ -36,8 +29,9 @@ if (Test-Path $appFile) {
     $appContent = Get-Content $appFile
 
     # Adicionar import
-    if ($appContent -notcontains 'import AIStudioApp from "./aistudio/AIStudioApp";') {
-        $appContent = @('import AIStudioApp from "./aistudio/AIStudioApp";') + $appContent
+    $importLine = 'import AIStudioApp from "./aistudio/AIStudioApp";'
+    if ($appContent -notcontains $importLine) {
+        $appContent = @($importLine) + $appContent
     }
 
     # Adicionar rota
@@ -55,6 +49,9 @@ if (Test-Path $appFile) {
     }
 
     $appContent | Set-Content $appFile -Encoding UTF8
+    Write-Host "Rota adicionada."
+} else {
+    Write-Host "ERRO: App.tsx nao encontrado."
 }
 
 # 3) Inserir botão no index.html
@@ -64,7 +61,7 @@ if (Test-Path $indexFile) {
 
     $indexContent = Get-Content $indexFile
 
-    $buttonHtml = '<a href="/app/login">Área Pessoal</a>'
+    $buttonHtml = '<a href="/app/login">Area Pessoal</a>'
 
     if ($indexContent -notcontains $buttonHtml) {
         $newIndex = @()
@@ -78,12 +75,9 @@ if (Test-Path $indexFile) {
     }
 
     $indexContent | Set-Content $indexFile -Encoding UTF8
+    Write-Host "Botao adicionado."
+} else {
+    Write-Host "ERRO: index.html nao encontrado."
 }
 
-# 4) Git commit + push
-Set-Location $projectRoot
-git add .
-git commit -m "Configurar AI Studio automaticamente"
-git push
-
-Write-Host "=== CONFIGURAÇÃO CONCLUÍDA ==="
+Write-Host "=== CONFIGURACAO CONCLUIDA ==="
