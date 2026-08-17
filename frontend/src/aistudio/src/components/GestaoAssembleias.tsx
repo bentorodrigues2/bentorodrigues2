@@ -72,6 +72,7 @@ export function GestaoAssembleias({ predio, fracoes, reunioes, onAddReuniao, set
     setTema("Assembleia Geral Ordinária de Apreciação de Contas e Obras");
     setData("2026-09-21");
     setHora("20:30");
+    setLocalReuniao("Sala Comum do Condomínio");
     setOrdensTrabalho(
       "1. Apreciação, discussão e votação do relatório de contas do exercício transato;\n" +
       "2. Análise e aprovação do orçamento de despesas correntes para o novo ano civil;\n" +
@@ -138,6 +139,7 @@ export function GestaoAssembleias({ predio, fracoes, reunioes, onAddReuniao, set
             tema,
             data: formatDatePT(data),
             hora,
+            local_reuniao: localReuniao || "Sala Comum do Condomínio",
             ordens_trabalho: ordensTrabalho,
             isVideoconferencia,
             plataformaVideoconferencia: plataformaVideo,
@@ -156,6 +158,7 @@ export function GestaoAssembleias({ predio, fracoes, reunioes, onAddReuniao, set
         data: formatDatePT(data),
         hora,
         tema,
+        local_reuniao: localReuniao || "Sala Comum do Condomínio",
         ordens_trabalho: ordensTrabalho,
         estado: "Agendada",
         isVideoconferencia,
@@ -179,6 +182,7 @@ export function GestaoAssembleias({ predio, fracoes, reunioes, onAddReuniao, set
 
     const hSegunda = somarMinutos(hora, 30);
     const videoSection = isVideoconferencia ? `\n\n🎥 ACESSO POR VÍDEO-CONFERÊNCIA (${plataformaVideo}):\nLink de Acesso Direto: ${linkFinal}\nNota Obrigatória: Quem assistir por vídeo-conferência deve assinar digitalmente e assinalar presença online.` : "";
+    const localStr = localReuniao.trim() ? localReuniao : `Sala Comum / Morada do Prédio (${predio.morada_linha1}, Nº ${predio.num_porta || ""})`;
 
     const textoConvocatoria = `Assunto: Convocatória – Assembleia de Condóminos (${isVideoconferencia ? "Presencial / Vídeo-Conferência" : "Presencial"})
 
@@ -188,7 +192,7 @@ A assembleia de condóminos foi agendada.
 
 1ª Convocatória: ${formatDatePT(data)} às ${hora} horas
 2ª Convocatória (Código Civil): ${formatDatePT(data)} às ${hSegunda} horas
-Local: Morada do Prédio (${predio.morada_linha1}, Nº ${predio.num_porta || ""}, ${predio.localidade})${videoSection}
+Local da Reunião: ${localStr}${videoSection}
 
 Ordem de trabalhos: 
 ${ordensTrabalho}
@@ -203,7 +207,7 @@ Com os meus cumprimentos,
 Powered by CondoManager AI`;
 
     setEmailConvocatoria(textoConvocatoria);
-    setTema(""); setData(""); setHora(""); setOrdensTrabalho(""); setLinkVideo("");
+    setTema(""); setData(""); setHora(""); setOrdensTrabalho(""); setLinkVideo(""); setLocalReuniao("");
   };
 
   const iniciarEdicao = (r: Reuniao) => {
@@ -211,6 +215,7 @@ Powered by CondoManager AI`;
     setTema(r.tema);
     setData(formatDateISO(r.data));
     setHora(r.hora);
+    setLocalReuniao(r.local_reuniao || "Sala Comum do Condomínio");
     setOrdensTrabalho(r.ordens_trabalho);
   };
 
@@ -989,6 +994,46 @@ Powered by CondoManager AI`;
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col col-span-2">
+              <label className="text-xs font-semibold text-slate-500 mb-1">Local da Reunião (Definição Manual / Seleção Rápida) *</label>
+              <input
+                type="text"
+                value={localReuniao}
+                onChange={e => setLocalReuniao(e.target.value)}
+                placeholder="Ex: Sala Comum do Condomínio / Hall da Entrada"
+                className="border border-slate-200 px-3 py-2 text-sm rounded-lg focus:outline-emerald-500"
+              />
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Locais:</span>
+                <button
+                  type="button"
+                  onClick={() => setLocalReuniao("Sala Comum do Condomínio")}
+                  className={`text-[11px] px-2.5 py-1 rounded-md border font-semibold cursor-pointer transition-all ${
+                    localReuniao === "Sala Comum do Condomínio" ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  🏫 Sala Comum
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocalReuniao("Hall do Prédio (Entrada Principal)")}
+                  className={`text-[11px] px-2.5 py-1 rounded-md border font-semibold cursor-pointer transition-all ${
+                    localReuniao === "Hall do Prédio (Entrada Principal)" ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  🚪 Hall do Prédio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocalReuniao("Terraço do Edifício")}
+                  className={`text-[11px] px-2.5 py-1 rounded-md border font-semibold cursor-pointer transition-all ${
+                    localReuniao === "Terraço do Edifício" ? "bg-emerald-600 text-white border-emerald-600" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  🏙️ Terraço
+                </button>
+              </div>
+            </div>
             <div className="flex flex-col">
               <label className="text-xs font-semibold text-slate-500 mb-1">Hora de Início *</label>
               <input type="time" value={hora} onChange={e => setHora(e.target.value)} className="border border-slate-200 px-3 py-2 text-sm rounded-lg focus:outline-emerald-500" />
@@ -999,10 +1044,11 @@ Powered by CondoManager AI`;
                 </span>
               )}
             </div>
-            <div className="flex flex-col col-span-2">
-              <label className="text-xs font-semibold text-slate-500 mb-1">Ordens de Trabalho *</label>
-              <textarea value={ordensTrabalho} onChange={e => setOrdensTrabalho(e.target.value)} rows={3} placeholder="1. Aprovação de contas do exercício anterior;&#10;2. Discussão e votação do orçamento extraordinário de obras;&#10;3. Eleição dos órgãos da administração de condomínio." className="border border-slate-200 p-3 rounded-lg text-sm focus:outline-emerald-500 bg-slate-50/50" />
-            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold text-slate-500 mb-1">Ordens de Trabalho *</label>
+            <textarea value={ordensTrabalho} onChange={e => setOrdensTrabalho(e.target.value)} rows={3} placeholder="1. Aprovação de contas do exercício anterior;&#10;2. Discussão e votação do orçamento extraordinário de obras;&#10;3. Eleição dos órgãos da administração de condomínio." className="border border-slate-200 p-3 rounded-lg text-sm focus:outline-emerald-500 bg-slate-50/50" />
           </div>
 
           {/* Opções de Vídeo-Conferência e Sondagem */}

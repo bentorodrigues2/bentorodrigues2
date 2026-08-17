@@ -1334,7 +1334,10 @@ export function GestaoFracoes({
         </div>
       )}
 
-      {/* Alerta de Integridade de Permilagem Legal */}
+      {/* SUB-MENU 3 / CONSULTA: LISTA DE FRAÇÕES, PERFIS & CALCULADORA */}
+      {currentSubTab === "fracoes_perfis" && (
+        <>
+          {/* Alerta de Integridade de Permilagem Legal */}
       <div className={`p-5 rounded-xl border flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 ${
         totalPermilagem === 1000 
           ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
@@ -1809,6 +1812,8 @@ export function GestaoFracoes({
           </tbody>
         </table>
       </div>
+        </>
+      )}
 
       {/* Modals for Interactive Ficha and Dynamic PDF Reports */}
       <ModalFichaCondominoEditavel

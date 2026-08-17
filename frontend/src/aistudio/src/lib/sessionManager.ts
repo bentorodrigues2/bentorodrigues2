@@ -92,7 +92,7 @@ export const RoleNavigationMap: Record<UserRole, RoleNavigationConfig> = {
   USER: {
     role: "USER",
     defaultTab: "painel",
-    allowedTabs: ["painel", "portal_condomino", "fracoes", "fracoes_proprietario", "financeiro_extratos", "financeiro_recibos", "arquivo", "documentos", "manutencao_ocorrencias", "ocorrencias", "vistorias_limpezas", "reservas", "assembleias"],
+    allowedTabs: ["painel", "portal_condomino", "fracoes", "fracoes_proprietario", "financeiro_extratos", "financeiro_recibos", "arquivo", "documentos", "manutencao_ocorrencias", "ocorrencias", "vistorias_limpezas", "reservas", "assembleias", "predios", "predios_cadastro", "predios_regras"],
     displayName: "Condómino",
     badgeColor: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
   }
