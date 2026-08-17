@@ -31,6 +31,11 @@ export interface Contrato {
 export function GestaoFornecedores({ predio, fornecedores, onAddFornecedor, loggedUser, initialTab }: GestaoFornecedoresProps) {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<"fornecedores" | "contratos">(initialTab || "fornecedores");
+  const [fornecedoresList, setFornecedoresList] = useState<Fornecedor[]>(fornecedores);
+
+  useEffect(() => {
+    setFornecedoresList(fornecedores);
+  }, [fornecedores]);
 
   useEffect(() => {
     if (initialTab) {
@@ -150,7 +155,7 @@ export function GestaoFornecedores({ predio, fornecedores, onAddFornecedor, logg
     exportToXLS(`Relatorio_Executivo_Contratos_${predio.nome || "Predio"}`, headers, rows);
   };
 
-  const predioForn = fornecedores.filter(f => f.id_predio === predio.id_predio);
+  const predioForn = fornecedoresList.filter(f => f.id_predio === predio.id_predio);
   const predioContratos = contratos.filter(c => c.id_predio === predio.id_predio);
 
   // Auto calculate cost relations
@@ -484,7 +489,7 @@ export function GestaoFornecedores({ predio, fornecedores, onAddFornecedor, logg
                         <button
                           onClick={() => {
                             if (confirm(`Tem a certeza de que deseja eliminar o fornecedor "${f.nome}"?`)) {
-                              setFornecedores(prev => prev.filter(x => x.id_fornecedor !== f.id_fornecedor));
+                              setFornecedoresList(prev => prev.filter(x => x.id_fornecedor !== f.id_fornecedor));
                             }
                           }}
                           className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2 py-1 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 w-full text-center"

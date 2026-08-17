@@ -10,6 +10,20 @@ export interface Patrimonio {
   tem_terraco: boolean;
   tem_ginasio: boolean;
   tem_spa: boolean;
+  tem_wc_piscina?: boolean;
+}
+
+export interface ChaveItem {
+  id_chave: string;
+  id_predio: string;
+  area_nome: string;
+  codigo_chave: string;
+  quantidade: number;
+  no_claviculario: boolean;
+  num_chaveiro?: string;
+  local_sugerido?: string;
+  observacoes?: string;
+  responsavel?: string;
 }
 
 export interface Predio {
@@ -156,6 +170,7 @@ export interface Reuniao {
   id_predio: string;
   data: string;
   hora: string;
+  local_reuniao?: string;
   tema: string;
   ordens_trabalho: string;
   estado: string;

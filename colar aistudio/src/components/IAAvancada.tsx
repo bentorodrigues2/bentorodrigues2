@@ -1553,14 +1553,14 @@ export function IAAvancada({ predio, fracoes, avisos, movements, fornecedores, l
             <div className="space-y-2">
               <div className="flex items-center justify-between border-b border-emerald-700/50 pb-1.5">
                 <span className="font-black text-pink-300 uppercase tracking-wider block text-[11px]">
-                  <i className="fa-solid fa-brain mr-1.5 text-pink-400"></i>Central de Inteligência Documental & Base de Conhecimento (DocFG - Cérebro IA)
+                  <i className="fa-solid fa-brain mr-1.5 text-pink-400"></i>Central de Inteligência Documental & Base de Conhecimento (DocFG - Analista IA)
                 </span>
                 <span className="bg-pink-900/60 text-pink-200 text-[10px] font-bold px-2 py-0.5 rounded border border-pink-700/60">
                   Nome Sugerido: Central de Inteligência Documental (DocFG)
                 </span>
               </div>
               <p className="text-[11px] text-emerald-100/90 leading-relaxed">
-                <strong>O que é & Função:</strong> O <strong>DocFG (Cérebro IA)</strong> é a Central de Inteligência Documental do condomínio. Funciona como uma base de conhecimento generativa que lê, analisa e indexa todas as atas de assembleia, relatórios de prestação de contas, contratos de fornecedores, certidões prediais e regulamentos internos. Permite ao gestor realizar pesquisas em linguagem natural (ex: <em>"qual o valor aprovado para a pintura em 2024?"</em>), resumir documentos extensos e efetuar verificações automáticas de auditoria e RGPD.
+                <strong>O que é & Função:</strong> O <strong>DocFG (Analista IA)</strong> é a Central de Inteligência Documental do condomínio. Funciona como uma base de conhecimento generativa que lê, analisa e indexa todas as atas de assembleia, relatórios de prestação de contas, contratos de fornecedores, certidões prediais e regulamentos internos. Permite ao gestor realizar pesquisas em linguagem natural (ex: <em>"qual o valor aprovado para a pintura em 2024?"</em>), resumir documentos extensos e efetuar verificações automáticas de auditoria e RGPD.
               </p>
             </div>
           )}
@@ -3320,7 +3320,7 @@ export function IAAvancada({ predio, fracoes, avisos, movements, fornecedores, l
                 </div>
                 <div>
                   <h4 className="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
-                    Cérebro CondoManager AI <span className="bg-pink-600/30 text-pink-400 text-[10px] uppercase px-2 py-0.5 rounded-full font-black border border-pink-500/20">Documento FG</span>
+                    Analista IA CondoManager <span className="bg-pink-600/30 text-pink-400 text-[10px] uppercase px-2 py-0.5 rounded-full font-black border border-pink-500/20">Documento FG</span>
                   </h4>
                   <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">
                     Visualização interativa das rotinas inteligentes, triggers de base de dados e transições de estado mapeadas conforme as especificações do Documento FG.

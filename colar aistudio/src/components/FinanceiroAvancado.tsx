@@ -47,15 +47,24 @@ export function FinanceiroAvancado({
   activeSubSection,
   initialTab
 }: FinanceiroAvancadoProps) {
+  const normalizeTab = (t: string | undefined): string => {
+    if (!t) return "recibos_manuais";
+    if (t === "financeiro_recibos" || t === "recibos_manuais") return "recibos_manuais";
+    if (t === "financeiro_relatorios" || t === "relatorio_dividas") return "relatorio_dividas";
+    if (t === "financeiro_extratos" || t === "extrato_saldos" || t === "extrato_saldo") return "extrato_saldo";
+    if (t === "financeiro_quotas_mensais" || t === "quotas_mensais") return "quotas_mensais";
+    if (t === "financeiro_quotas_extra" || t === "quotas_extra") return "quotas_extra";
+    if (t === "financeiro_caucoes" || t === "gestao_caucoes") return "gestao_caucoes";
+    return t;
+  };
+
   const movList = movements || movimentos || [];
   const rawTab = activeSubSection || initialTab || "recibos_manuais";
-  const [localTab, setLocalTab] = useState<string>(
-    rawTab === "extrato_saldos" ? "extrato_saldo" : rawTab
-  );
+  const [localTab, setLocalTab] = useState<string>(normalizeTab(rawTab));
 
   React.useEffect(() => {
     if (activeSubSection) {
-      setLocalTab(activeSubSection === "extrato_saldos" ? "extrato_saldo" : activeSubSection);
+      setLocalTab(normalizeTab(activeSubSection));
     }
   }, [activeSubSection]);
 

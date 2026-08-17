@@ -1550,6 +1550,112 @@ export function downloadReceiptPDF(data: ReceiptPdfData, customFilename?: string
   }
 }
 
+export function gerarPdfEtiquetasChaves(nomePredio: string, chaves: any[]) {
+  try {
+    const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
+    
+    const labelWidth = 30; // 3cm
+    const labelHeight = 15; // 1.5cm
+    const marginX = 10;
+    const marginY = 15;
+    const gapX = 2;
+    const gapY = 2;
+    
+    const cols = 6;
+    const rowsPerPage = 16;
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`ETIQUETAS DE CHAVEIRO - ${(nomePredio || "CONDOMÍNIO").toUpperCase()}`, marginX, 10);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Dimensões: 3,0 cm x 1,5 cm (30x15 mm) • Recorte pelas linhas tracejadas`, marginX + 105, 10);
+
+    let col = 0;
+    let row = 0;
+    
+    chaves.forEach((chave, index) => {
+      if (index > 0 && index % (cols * rowsPerPage) === 0) {
+        doc.addPage();
+        col = 0;
+        row = 0;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`ETIQUETAS DE CHAVEIRO - ${(nomePredio || "CONDOMÍNIO").toUpperCase()} (Pág. ${doc.getNumberOfPages()})`, marginX, 10);
+      }
+      
+      const x = marginX + col * (labelWidth + gapX);
+      const y = marginY + row * (labelHeight + gapY);
+      
+      // Outer dotted line
+      doc.setDrawColor(148, 163, 184);
+      doc.setLineWidth(0.2);
+      try {
+        (doc as any).setLineDashPattern([1, 1], 0);
+      } catch (e) {}
+      doc.rect(x, y, labelWidth, labelHeight);
+      
+      try {
+        (doc as any).setLineDashPattern([], 0);
+      } catch (e) {}
+      
+      // Accent bar
+      if (chave.no_claviculario) {
+        doc.setFillColor(16, 185, 129);
+      } else {
+        doc.setFillColor(100, 116, 139);
+      }
+      doc.rect(x + 0.3, y + 0.3, 1.5, labelHeight - 0.6, "F");
+      
+      // Keyhole ring circle indicator
+      doc.setFillColor(241, 245, 249);
+      doc.setDrawColor(203, 213, 225);
+      doc.circle(x + 3.2, y + labelHeight / 2, 0.9, "FD");
+      
+      // Building name
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5);
+      doc.setTextColor(71, 85, 105);
+      const bNameShort = (nomePredio || "Condomínio").length > 18 ? (nomePredio || "Condomínio").substring(0, 18) + "…" : (nomePredio || "Condomínio");
+      doc.text(bNameShort.toUpperCase(), x + 5, y + 3.2);
+      
+      // Key Name
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.setTextColor(15, 23, 42);
+      const keyNameShort = (chave.area_nome || "Chave").length > 17 ? (chave.area_nome || "Chave").substring(0, 16) + "…" : (chave.area_nome || "Chave");
+      doc.text(keyNameShort, x + 5, y + 6.8);
+      
+      // Key Code
+      doc.setFont("courier", "bold");
+      doc.setFontSize(6);
+      doc.setTextColor(30, 58, 138);
+      doc.text(chave.codigo_chave || `CHV-${index + 1}`, x + 5, y + 10.2);
+      
+      // Quantity and Chaveiro Num
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5);
+      doc.setTextColor(16, 185, 129);
+      const chaveiroTxt = chave.num_chaveiro ? ` • Chav. ${chave.num_chaveiro}` : "";
+      doc.text(`Qtd: ${chave.quantidade || 1} un${chaveiroTxt}`, x + 5, y + 13.5);
+
+      col++;
+      if (col >= cols) {
+        col = 0;
+        row++;
+      }
+    });
+    
+    doc.save(`Etiquetas_Chaves_3x1.5cm_${(nomePredio || "Condominio").replace(/\s+/g, "_")}.pdf`);
+  } catch (err) {
+    console.error("Erro ao gerar PDF de Etiquetas de Chaves:", err);
+    alert("Ocorreu um erro ao gerar o PDF de etiquetas de chaves.");
+  }
+}
+
 export * from './utils/registerServiceWorker';
 export * from './utils/requestPermission';
 export * from './utils/subscribeUser';
