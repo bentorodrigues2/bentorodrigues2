@@ -1,5 +1,8 @@
 {
   "devDependencies": {
-    "typescript": "6.2.2"
+    "typescript": "6.2.2",
+    "vite": "...",
+    "react": "...",
+    "react-dom": "..."
   }
 }
