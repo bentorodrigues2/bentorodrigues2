@@ -1,15 +1,14 @@
 {
-  "compilerOptions": { 
+  "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
     "moduleResolution": "Node",
     "strict": true,
     "jsx": "react-jsx",
-    "types": ["node"]
+    "types": ["node"],
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true
   },
-  "include": [
-    "src",
-    "src/aistudio"
-  ]
+  "include": ["src"]
 }
