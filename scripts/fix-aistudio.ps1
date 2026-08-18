@@ -37,7 +37,7 @@ $wrapperContent = @'
 import { useEffect, useState } from "react";
 
 export default function AIStudioWrapper() {
-  const [App, setApp] = useState<React.ComponentType | null>(null);
+  const [App, setApp] = useState(null);
 
   useEffect(() => {
     import("./index.css");
