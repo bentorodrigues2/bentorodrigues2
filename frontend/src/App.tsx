@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AIStudioWrapper from "./aistudio/AIStudioWrapper";
 
 function App() {
   return (
@@ -14,7 +13,6 @@ function App() {
             </div>
           }
         />
-        <Route path="/app/*" element={<AIStudioWrapper />} />
       </Routes>
     </BrowserRouter>
   );
