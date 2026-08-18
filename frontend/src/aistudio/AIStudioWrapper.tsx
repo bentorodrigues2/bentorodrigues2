@@ -1,12 +1,17 @@
-
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function AIStudioWrapper() {
+  const [App, setApp] = useState<React.ComponentType | null>(null);
+
   useEffect(() => {
     import("./index.css");
+
+    import("./src/App")
+      .then((mod) => setApp(() => mod.default))
+      .catch((err) => console.error("Erro ao carregar AI Studio:", err));
   }, []);
 
-  const AIStudioApp = require("./src/App.tsx").default;
+  if (!App) return <div>A carregar AI Studio...</div>;
 
-  return <AIStudioApp />;
+  return <App />;
 }

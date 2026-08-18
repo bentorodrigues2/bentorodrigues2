@@ -1,8 +1,15 @@
-﻿{
-  "extends": "./tsconfig.app.json",
+{
   "compilerOptions": {
-    "composite": true
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "strict": true,
+    "jsx": "react-jsx",
+    "types": ["node"]
   },
-  "include": ["src"],
-  "exclude": ["src/aistudio"]
+  "include": [
+    "src",
+    "src/aistudio"
+  ]
 }
