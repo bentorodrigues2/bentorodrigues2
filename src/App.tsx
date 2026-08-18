@@ -1,4 +1,4 @@
-import { askAI } from "../aistudio/useAI";
+import { askAI } from "/aistudio/useAI";
 
 async function testAI() {
   const reply = await askAI("Olá, quem és tu?");
