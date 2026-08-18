@@ -1,6 +1,6 @@
 {
+  "extends": "./frontend/tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "node10",
     "ignoreDeprecations": "6.0"
   }
 }
