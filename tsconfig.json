@@ -1,6 +1,5 @@
 {
-  "extends": "./frontend/tsconfig.json",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0"
+    "moduleResolution": "bundler"
   }
 }
