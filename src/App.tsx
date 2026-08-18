@@ -1,20 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from "react";
+import "./index.css";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <div>
-              <h1>Frontend OK</h1>
-              <a href="/app">√Årea Pessoal</a>
-            </div>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+    <div style={{ padding: "2rem", fontFamily: "system-ui" }}>
+      <h1>Frontend restaurado</h1>
+      <p>O projeto foi reconstruÌdo automaticamente.</p>
+    </div>
   );
 }
 
