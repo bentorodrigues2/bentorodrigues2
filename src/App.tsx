@@ -12,3 +12,5 @@ function App() {
 }
 
 export default App;
+import AIStudioRouter from "./aistudio/router";
+<AIStudioRouter />
