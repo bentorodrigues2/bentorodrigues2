@@ -22,4 +22,4 @@ Copy-Item "$source\package.json" "." -Force
 Copy-Item "$source\tsconfig.json" "." -Force
 Copy-Item "$source\vite.config.ts" "." -Force
 
-Write-Host "=== AI Studio integrado sem alterações ==="
+Write-Host "=== AI STUDIO integrado sem alterações ==="
