@@ -7,7 +7,7 @@ function App() {
     <div className="App">
       <h1>Frontend restaurado</h1>
       <p>O projeto voltou ao estado funcional.</p>
-    </div>
+    <AIStudioRouter /></div>
   );
 }
 
