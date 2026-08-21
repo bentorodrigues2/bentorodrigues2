@@ -3,7 +3,7 @@
 export default function GestaoPredios() {
   return (
     <div>
-      <h1>Gestão de Prédios</h1>
+      <h1>GestaoPredios</h1>
     </div>
   );
 }
