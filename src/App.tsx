@@ -37,8 +37,8 @@ import { InventarioTecnico } from "./components/InventarioTecnico";
 import { SecurityAuditModal } from "./components/SecurityAuditModal";
 import { SendingReactionModal } from "./components/SendingReactionModal";
 import LayoutTop from "./components/LayoutTop";
-import AuthForm from "./component../services/authServiceForm";
-import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from ../service../services/authServiceServiceSecurity";
+import AuthForm from "./components/AuthForm";
+import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from ../services/authService";
 import { 
   createNewSession, 
   validateSession, 

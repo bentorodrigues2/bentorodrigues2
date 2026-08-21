@@ -34,7 +34,7 @@ import { SendingReactionModal } from "./SendingReactionModal";
 import { AuditoriaInterna } from "./AuditoriaInterna";
 import { GestaoFornecedores } from "./GestaoFornecedores";
 import { PortalOrcamentos } from "./PortalOrcamentos";
-import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from "../service../services/authServiceServiceSecurity";
+import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from "../services/authService";
 import { createNewSession } from "../lib/sessionManager";
 import { SecurityAuditModal } from "./SecurityAuditModal";
 import { ConfiguracoesAdministracao } from "./ConfiguracoesAdministracao";

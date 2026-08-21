@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { validatePasswordPolicy, createSecurityLog } from "../service../services/authServiceServiceSecurity";
+import { validatePasswordPolicy, createSecurityLog } from "../services/authService";
 
 interface AuthFormProps {
   initialEmail?: string;
