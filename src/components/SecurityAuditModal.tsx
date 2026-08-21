@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSecurityLogs, SecurityLog, getSimulatedClientIp } from "../services/authService";
+// import removido — authService.ts não existe
 import { getDocumentAccessLogs, DocumentAccessLog, ACL_ROLE_MATRIX } from "../lib/documentSecurity";
 
 interface SecurityAuditModalProps {
@@ -18,12 +18,12 @@ export function SecurityAuditModal({
   isLocked,
 }: SecurityAuditModalProps) {
   const [activeTab, setActiveTab] = useState<"auth" | "rls" | "acl" | "doclogs">("auth");
-  const [logs, setLogs] = useState<SecurityLog[]>([]);
+// linha removida — função inexistente
   const [docLogs, setDocLogs] = useState<DocumentAccessLog[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      setLogs(getSecurityLogs());
+// linha removida — função inexistente
       setDocLogs(getDocumentAccessLogs());
     }
   }, [isOpen]);

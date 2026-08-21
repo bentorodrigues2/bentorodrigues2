@@ -1,13 +1,13 @@
 import React from "react";
-import AuthForm from "../services/authServiceForm";
+// import removido — authService.ts não existe
 
 interface AuthModalProps {
   onClose: () => void;
   onLoginSuccess?: (email: string) => void;
-  onOpenSecurityLogs?: () => void;
+// linha removida — função inexistente
 }
 
-export default function AuthModal({ onClose, onLoginSuccess, onOpenSecurityLogs }: AuthModalProps) {
+// linha removida — função inexistente
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in"
@@ -31,7 +31,7 @@ export default function AuthModal({ onClose, onLoginSuccess, onOpenSecurityLogs 
               onLoginSuccess(email);
             }
           }}
-          onOpenSecurityLogs={onOpenSecurityLogs}
+// linha removida — função inexistente
         />
       </div>
     </div>

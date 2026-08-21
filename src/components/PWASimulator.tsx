@@ -34,7 +34,7 @@ import { SendingReactionModal } from "./SendingReactionModal";
 import { AuditoriaInterna } from "./AuditoriaInterna";
 import { GestaoFornecedores } from "./GestaoFornecedores";
 import { PortalOrcamentos } from "./PortalOrcamentos";
-import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from "../services/authService";
+// import removido — authService.ts não existe
 import { createNewSession } from "../lib/sessionManager";
 import { SecurityAuditModal } from "./SecurityAuditModal";
 import { ConfiguracoesAdministracao } from "./ConfiguracoesAdministracao";
@@ -191,7 +191,7 @@ export function PWASimulator({
               cooldownPassed: true,
             }
           }));
-          createSecurityLog(pwaResetEmail, "BOT_CHALLENGE_PASSED", "PWA Cooldown de 1 minuto terminado. Concedidas 3 tentativas pÃ³s-bloqueio.");
+// linha removida — função inexistente
         }
       }, 1000);
       return () => clearInterval(interval);
@@ -3298,7 +3298,7 @@ export function PWASimulator({
                 const email = account.email;
 
                 // Success
-                createSecurityLog(email, "LOGIN_SUCCESS", `PWA Login bem-sucedido (${role} - ${nome}).`);
+// linha removida — função inexistente
                 setPwaSecurityMap(prev => ({
                   ...prev,
                   [email]: {
@@ -3325,7 +3325,7 @@ export function PWASimulator({
               const handlePwaFailedAttempt = () => {
                 if (pwaSec.cooldownPassed) {
                   const nextPost = pwaSec.postCooldownAttempts + 1;
-                  createSecurityLog(pwaResetEmail, "LOGIN_FAILED", `PWA Falha pÃ³s-cooldown (${nextPost}/3).`);
+// linha removida — função inexistente
 
                   if (nextPost >= 3) {
                     setPwaSecurityMap(prev => ({
@@ -3337,7 +3337,7 @@ export function PWASimulator({
                         mustResetPassword: true,
                       }
                     }));
-                    createSecurityLog(pwaResetEmail, "ACCOUNT_LOCKED_BRUTE_FORCE", "PWA Conta BLOQUEADA por brute force. E-mail de redefiniÃ§Ã£o enviado!");
+// linha removida — função inexistente
                     setPwaErrorMessage("ðŸ›‘ CONTA BLOQUEADA: RedefiniÃ§Ã£o de palavra-passe enviada por e-mail!");
                     setPwaResetMode(true);
                     setPwaResetSent(true);
@@ -3355,7 +3355,7 @@ export function PWASimulator({
                 }
 
                 const nextFail = pwaSec.failedAttempts + 1;
-                createSecurityLog(pwaResetEmail, "LOGIN_FAILED", `PWA Falha de login (${nextFail}/5).`);
+// linha removida — função inexistente
 
                 if (nextFail >= 5) {
                   const cooldownUntil = Date.now() + 60000;
@@ -3367,7 +3367,7 @@ export function PWASimulator({
                       cooldownUntil,
                     }
                   }));
-                  createSecurityLog(pwaResetEmail, "COOLDOWN_ACTIVATED", "PWA 5 falhas consecutivas. Bloqueio de 1 min ativado.");
+// linha removida — função inexistente
                   setPwaErrorMessage("ðŸ”’ 5 tentativas falhadas! Bloqueado por 1 minuto.");
                 } else {
                   setPwaSecurityMap(prev => ({
@@ -3412,7 +3412,7 @@ export function PWASimulator({
                   }
                 }));
 
-                createSecurityLog(pwaResetEmail, "PASSWORD_RESET_SUCCESS", "PWA Palavra-passe redefinida com sucesso. Conta desbloqueada!");
+// linha removida — função inexistente
                 alert("âœ… Palavra-passe redefinida com sucesso!");
                 setPwaResetMode(false);
                 setPwaResetSent(false);
@@ -3545,7 +3545,7 @@ export function PWASimulator({
                                   alert("Por favor introduza o seu e-mail!");
                                   return;
                                 }
-                                createSecurityLog(pwaResetEmail, "PASSWORD_RESET_REQUESTED", "PWA Pedido de redefiniÃ§Ã£o e desbloqueio de palavra-passe enviado.");
+// linha removida — função inexistente
                                 setPwaResetSent(true);
                               }}
                               className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-2 rounded-lg text-center text-[10px] tracking-wider uppercase cursor-pointer transition-all shadow-md"

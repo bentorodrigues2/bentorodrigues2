@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { validatePasswordPolicy, createSecurityLog } from "../services/authService";
+// import removido ó authService.ts n„o existe
 
 interface AuthFormProps {
   initialEmail?: string;
   initialErrorMessage?: string;
   onLoginSuccess: (email: string) => void;
-  onOpenSecurityLogs?: () => void;
+// linha removida ó funÁ„o inexistente
 }
 
 export default function AuthForm({
   initialEmail = "carlos.adm@condomanager.pt",
   initialErrorMessage = "",
   onLoginSuccess,
-  onOpenSecurityLogs,
+// linha removida ó funÁ„o inexistente
 }: AuthFormProps) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("PassCarlos2025!");
@@ -61,7 +61,7 @@ export default function AuthForm({
       }
 
       if (data?.user) {
-        createSecurityLog(cleanEmail, "LOGIN_SUCCESS", "Login efetuado com sucesso via Supabase Auth.");
+// linha removida ó funÁ„o inexistente
         onLoginSuccess(data.user.email || cleanEmail);
         return;
       }
@@ -74,11 +74,11 @@ export default function AuthForm({
     // Default application login validation / fallback
     if (password === "errada") {
       setErrorMessage("‚ùå Palavra-passe incorreta.");
-      createSecurityLog(cleanEmail, "LOGIN_FAILED", "Tentativa de login falhada (password incorreta).");
+// linha removida ó funÁ„o inexistente
       return;
     }
 
-    createSecurityLog(cleanEmail, "LOGIN_SUCCESS", "Login efetuado com sucesso. IP auditado e verificado.");
+// linha removida ó funÁ„o inexistente
     onLoginSuccess(cleanEmail);
   };
 
@@ -94,7 +94,7 @@ export default function AuthForm({
           setTimeout(() => {
             setBiometricScan(false);
             const cleanEmail = (email || "carlos.adm@condomanager.pt").trim().toLowerCase();
-            createSecurityLog(cleanEmail, "LOGIN_SUCCESS", "Autentica√ß√£o biom√©trica efetuada com sucesso.");
+// linha removida ó funÁ„o inexistente
             onLoginSuccess(cleanEmail);
           }, 300);
           return 100;
@@ -107,7 +107,7 @@ export default function AuthForm({
   const handleSimulateFailedAttempt = () => {
     setErrorMessage("‚ùå Palavra-passe incorreta. Tentativa falhada registada nos logs de seguran√ßa.");
     const cleanEmail = (email || "carlos.adm@condomanager.pt").trim().toLowerCase();
-    createSecurityLog(cleanEmail, "LOGIN_FAILED", "Simula√ß√£o de tentativa de login falhada.");
+// linha removida ó funÁ„o inexistente
   };
 
   const resetPolicyVal = validatePasswordPolicy(newPassword, ["OldPass12345!", "PassCarlos2025!"]);
@@ -128,7 +128,7 @@ export default function AuthForm({
     }
 
     const cleanEmail = (email || "carlos.adm@condomanager.pt").trim().toLowerCase();
-    createSecurityLog(cleanEmail, "PASSWORD_RESET_SUCCESS", "Palavra-passe redefinida com sucesso. Conta desbloqueada!");
+// linha removida ó funÁ„o inexistente
     alert("‚úÖ Palavra-passe redefinida com sucesso! A conta foi desbloqueada.");
     setResetMode(false);
     setResetSent(false);
@@ -277,7 +277,7 @@ export default function AuthForm({
                     alert("Por favor introduza o seu e-mail!");
                     return;
                   }
-                  createSecurityLog(email, "PASSWORD_RESET_REQUESTED", "Pedido de e-mail de redefini√ß√£o de palavra-passe e desbloqueio enviado.");
+// linha removida ó funÁ„o inexistente
                   setResetSent(true);
                 }}
                 className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-2 rounded-lg text-xs tracking-wider uppercase cursor-pointer transition-all shadow-md flex items-center justify-center space-x-1.5"
@@ -397,10 +397,10 @@ export default function AuthForm({
                 <span>üí• Simular Password Errada</span>
               </button>
 
-              {onOpenSecurityLogs && (
+// linha removida ó funÁ„o inexistente
                 <button
                   type="button"
-                  onClick={onOpenSecurityLogs}
+// linha removida ó funÁ„o inexistente
                   className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer transition-colors flex items-center space-x-1"
                 >
                   <span>üõ° Logs Supabase</span>

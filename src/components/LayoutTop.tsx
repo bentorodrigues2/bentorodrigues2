@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { } from "../services/authService";
+// import removido — authService.ts não existe
 import "./LayoutTop.css";
 
 interface LayoutTopProps {
