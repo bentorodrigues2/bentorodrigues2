@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSecurityLogs, SecurityLog, getSimulatedClientIp } from "../lib/authSecurity";
+import { getSecurityLogs, SecurityLog, getSimulatedClientIp } from "../service../services/authServiceServiceSecurity";
 import { getDocumentAccessLogs, DocumentAccessLog, ACL_ROLE_MATRIX } from "../lib/documentSecurity";
 
 interface SecurityAuditModalProps {

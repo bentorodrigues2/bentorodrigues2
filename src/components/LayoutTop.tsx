@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import AuthModal from "./AuthModal";
+import AuthModal from "../services/authServiceModal";
 import "./LayoutTop.css";
 
 interface LayoutTopProps {
