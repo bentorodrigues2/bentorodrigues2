@@ -1,31 +1,38 @@
-import React from "react";
+﻿import React from "react";
+import AuthForm from "./AuthForm";
 
-export default function AuthModal() {
+interface AuthModalProps {
+  onClose: () => void;
+  onLoginSuccess?: (email: string) => void;
+  onOpenSecurityLogs?: () => void;
+}
+
+export default function AuthModal({ onClose, onLoginSuccess, onOpenSecurityLogs }: AuthModalProps) {
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-      }}
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in"
+      onClick={onClose}
     >
-      <div
-        style={{
-          background: "white",
-          padding: "20px",
-          borderRadius: "8px",
-          minWidth: "300px",
-        }}
+      <div 
+        className="relative z-50"
+        onClick={(e) => e.stopPropagation()}
       >
-        <h2>Área Pessoal</h2>
-        <p>Autenticação ainda não implementada.</p>
+        <button
+          onClick={onClose}
+          className="absolute -top-3 -right-3 z-10 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white h-8 w-8 rounded-full border border-slate-700 flex items-center justify-center font-bold text-sm shadow-lg transition-colors cursor-pointer"
+          title="Fechar Portal"
+        >
+          ✕
+        </button>
+
+        <AuthForm 
+          onLoginSuccess={(email) => {
+            if (onLoginSuccess) {
+              onLoginSuccess(email);
+            }
+          }}
+          onOpenSecurityLogs={onOpenSecurityLogs}
+        />
       </div>
     </div>
   );
