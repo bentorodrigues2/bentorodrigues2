@@ -1,3 +1,4 @@
+﻿const PainelControlo = () => {
 import React from "react";
 import { Predio, Conta, Fracao, Movimento, Aviso } from "../types";
 import { exportToXLS } from "../utils";
@@ -63,24 +64,24 @@ export function PainelControlo({
       {/* 13 MANDATORY INDICATORS (FROM DOCUMENT I, PAGE 2 & 3) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold text-[#333] uppercase tracking-wider">Módulo de Administração: Os 13 Indicadores Ativos</h4>
-          <span className="text-[10px] text-slate-400 font-medium">Clique em qualquer indicador para navegar para o módulo</span>
+          <h4 className="text-xs font-bold text-[#333] uppercase tracking-wider">MÃ³dulo de AdministraÃ§Ã£o: Os 13 Indicadores Ativos</h4>
+          <span className="text-[10px] text-slate-400 font-medium">Clique em qualquer indicador para navegar para o mÃ³dulo</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
           {[
-            { name: "Prédios Ativos", val: "1 Edifício", icon: "/modulos/01-predio.png", section: "predios" },
-            { name: "Condóminos", val: `${predioFracoes.length} Frações`, icon: "/modulos/07-fracao.png", section: "fracoes" },
+            { name: "PrÃ©dios Ativos", val: "1 EdifÃ­cio", icon: "/modulos/01-predio.png", section: "predios" },
+            { name: "CondÃ³minos", val: `${predioFracoes.length} FraÃ§Ãµes`, icon: "/modulos/07-fracao.png", section: "fracoes" },
             { name: "Inquilinos", val: `${predioFracoes.filter(f => f.is_arrendada).length} Ativos`, icon: "/modulos/12-inquilino.png", section: "fracoes_perfis" },
-            { name: "Intervenções", val: `${ocorrenciasCount} Registadas`, icon: "/modulos/28-intervencao.png", section: "manutencao_intervencoes" },
+            { name: "IntervenÃ§Ãµes", val: `${ocorrenciasCount} Registadas`, icon: "/modulos/28-intervencao.png", section: "manutencao_intervencoes" },
             { name: "Obras Gerais", val: "1 Ativa", icon: "/modulos/41-obra.png", section: "manutencao_extraordinarias" },
-            { name: "Escala Limpeza", val: "3 Áreas", icon: "/modulos/50-limpeza.png", section: "vistorias_limpezas" },
+            { name: "Escala Limpeza", val: "3 Ãreas", icon: "/modulos/50-limpeza.png", section: "vistorias_limpezas" },
             { name: "Documentos IA", val: "4 Arquivados", icon: "/modulos/27-arquivo-automatico.png", section: "documentos" },
-            { name: "Cobranças", val: `${predioAvisos.filter(a => a.estado === 'Pendente').length} Pendentes`, icon: "/modulos/60-nota-de-cobranca.png", section: "financeiro_relatorios" },
-            { name: "Alertas Jurídicos", val: "1 Ativo", icon: "/modulos/23-contrato.png", section: "contencioso_juridico" },
+            { name: "CobranÃ§as", val: `${predioAvisos.filter(a => a.estado === 'Pendente').length} Pendentes`, icon: "/modulos/60-nota-de-cobranca.png", section: "financeiro_relatorios" },
+            { name: "Alertas JurÃ­dicos", val: "1 Ativo", icon: "/modulos/23-contrato.png", section: "contencioso_juridico" },
             { name: "Contratos Fornecedores", val: "2 Ativos", icon: "/modulos/67-fornecedor.png", section: "fornecedores" },
             { name: "Sondagens IA", val: "1 Ativa", icon: "/modulos/76-sondagem.png", section: "comunicacao_sondagens" },
-            { name: "Fundo Reserva", val: `${totalFundoReserva.toLocaleString("pt-PT")} €`, icon: "/modulos/64-saldo.png", section: "financeiro_extratos" },
-            { name: "Saldo em Caixa", val: `${totalSaldoCaixa.toLocaleString("pt-PT")} €`, icon: "/modulos/57-quota.png", section: "movimentos" }
+            { name: "Fundo Reserva", val: `${totalFundoReserva.toLocaleString("pt-PT")} â‚¬`, icon: "/modulos/64-saldo.png", section: "financeiro_extratos" },
+            { name: "Saldo em Caixa", val: `${totalSaldoCaixa.toLocaleString("pt-PT")} â‚¬`, icon: "/modulos/57-quota.png", section: "movimentos" }
           ].map((ind, idx) => (
             <button
               key={idx}
@@ -106,8 +107,8 @@ export function PainelControlo({
         <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-sm font-bold text-slate-800">Transparência Orçamental e Fluxo de Caixa</h3>
-              <p className="text-xs text-slate-400">Receitas de quotas vs. despesas de manutenção no ano corrente.</p>
+              <h3 className="text-sm font-bold text-slate-800">TransparÃªncia OrÃ§amental e Fluxo de Caixa</h3>
+              <p className="text-xs text-slate-400">Receitas de quotas vs. despesas de manutenÃ§Ã£o no ano corrente.</p>
             </div>
             <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">Ano 2026</span>
           </div>
@@ -139,37 +140,37 @@ export function PainelControlo({
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between min-h-[250px]">
           <div>
             <h3 className="text-sm font-bold text-slate-800 mb-1 flex items-center justify-between">
-              <span>IA Assistente Automático</span>
+              <span>IA Assistente AutomÃ¡tico</span>
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
               </span>
             </h3>
-            <p className="text-xs text-slate-400 mb-4">Reconciliação e alertas pendentes de validação.</p>
+            <p className="text-xs text-slate-400 mb-4">ReconciliaÃ§Ã£o e alertas pendentes de validaÃ§Ã£o.</p>
             
             <div className="space-y-3">
               <div className="flex items-start space-x-2 text-xs bg-amber-50 border border-amber-100 p-2.5 rounded-lg text-amber-800">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
                 <div>
                   <span className="font-bold block">Quotas em Atraso</span>
-                  <span>A fração D possui 3 quotas em falta. Cobrança extrajudicial recomendada.</span>
+                  <span>A fraÃ§Ã£o D possui 3 quotas em falta. CobranÃ§a extrajudicial recomendada.</span>
                 </div>
               </div>
               <div className="flex items-start space-x-2 text-xs bg-indigo-50 border border-indigo-100 p-2.5 rounded-lg text-indigo-800">
                 <Brain className="h-4 w-4 shrink-0 text-indigo-500 mt-0.5" />
                 <div>
-                  <span className="font-bold block">Análise de Contratos</span>
+                  <span className="font-bold block">AnÃ¡lise de Contratos</span>
                   <span>O contrato de Limpeza expira em 30 dias. IA sugere rever o reajuste de 2%.</span>
                 </div>
               </div>
             </div>
           </div>
           <button 
-            onClick={() => alert("Resumo IA gerado e enviado para a caixa de correio da administração.")}
+            onClick={() => alert("Resumo IA gerado e enviado para a caixa de correio da administraÃ§Ã£o.")}
             className="mt-4 w-full bg-[#1A1A1A] hover:bg-[#333] text-white font-bold py-2 rounded-lg text-xs cursor-pointer flex items-center justify-center space-x-1.5 transition-colors"
           >
             <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Gerar Relatório de IA</span>
+            <span>Gerar RelatÃ³rio de IA</span>
           </button>
         </div>
       </div>
@@ -178,8 +179,8 @@ export function PainelControlo({
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-800">Transações e Movimentos de Caixa</h3>
-            <p className="text-xs text-slate-400">Lançamentos confirmados e reconciliados recentemente.</p>
+            <h3 className="text-sm font-bold text-slate-800">TransaÃ§Ãµes e Movimentos de Caixa</h3>
+            <p className="text-xs text-slate-400">LanÃ§amentos confirmados e reconciliados recentemente.</p>
           </div>
           <button 
             onClick={() => exportToXLS("Saldos_Movimentos", ["Data", "Tipo", "Descricao", "Valor"], predioMovements.map(m=>[m.data, m.tipo, m.descricao, m.valor.toString()]))} 
@@ -196,7 +197,7 @@ export function PainelControlo({
               <tr className="border-b border-slate-150 text-slate-400 font-bold">
                 <th className="py-2">Data</th>
                 <th className="py-2">Tipo</th>
-                <th className="py-2">Descrição</th>
+                <th className="py-2">DescriÃ§Ã£o</th>
                 <th className="py-2">Categoria</th>
                 <th className="py-2 text-right">Valor</th>
               </tr>
@@ -217,7 +218,7 @@ export function PainelControlo({
                   <td className={`py-2.5 text-right font-bold ${
                     m.tipo === "Receita" || m.tipo === "RECEITA" ? "text-emerald-600" : "text-red-600"
                   }`}>
-                    {m.tipo === "Receita" || m.tipo === "RECEITA" ? "+" : "-"}{m.valor.toFixed(2)} €
+                    {m.tipo === "Receita" || m.tipo === "RECEITA" ? "+" : "-"}{m.valor.toFixed(2)} â‚¬
                   </td>
                 </tr>
               ))}
@@ -229,3 +230,7 @@ export function PainelControlo({
   );
 }
 
+
+};
+
+export default PainelControlo;
