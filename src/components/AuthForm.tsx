@@ -123,7 +123,7 @@ export default function AuthForm({
     }
 
     if (!resetPolicyVal.isValid) {
-      alert("A palavra-passe nÃ£o cumpre todos os requisitos de seguranÃ§a:\n\nâ€¢ " + resetPolicyVal.errors.join("\nâ€¢ "));
+                {/* bloco removido — JSX inválido */}
       return;
     }
 
@@ -170,14 +170,14 @@ export default function AuthForm({
           </div>
           <button
             type="button"
-            onClick={() => setErrorMessage("")}
+                {/* bloco removido — JSX inválido */}
             className="text-red-400 hover:text-white shrink-0 ml-1 font-bold"
             title="Fechar aviso"
           >
             âœ•
           </button>
         </div>
-      )}
+                {/* bloco removido — JSX inválido */}
 
       {resetMode ? (
         /* PASSWORD RESET MODE */
@@ -200,7 +200,7 @@ export default function AuthForm({
                 <input
                   type="password"
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                {/* bloco removido — JSX inválido */}
                   placeholder="Nova Palavra-passe (mÃ­n 12 caract)..."
                   className="w-full bg-slate-950 border border-slate-800 text-xs rounded-lg p-2 font-mono text-white focus:outline-none focus:border-emerald-500"
                 />
@@ -208,7 +208,7 @@ export default function AuthForm({
                 <input
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                {/* bloco removido — JSX inválido */}
                   placeholder="Confirmar Nova Palavra-passe..."
                   className="w-full bg-slate-950 border border-slate-800 text-xs rounded-lg p-2 font-mono text-white focus:outline-none focus:border-emerald-500"
                 />
@@ -241,7 +241,7 @@ export default function AuthForm({
                       </span>
                     </div>
                   </div>
-                )}
+                {/* bloco removido — JSX inválido */}
 
                 <button
                   type="button"
@@ -262,7 +262,7 @@ export default function AuthForm({
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                {/* bloco removido — JSX inválido */}
                     placeholder="utilizador@condomanager.pt"
                     className="w-full bg-slate-950 border border-slate-800 text-xs rounded-lg p-2 pl-8 font-medium text-white focus:outline-none focus:border-emerald-500"
                   />
@@ -273,7 +273,7 @@ export default function AuthForm({
               <button
                 type="button"
                 onClick={() => {
-                  if (!email.trim()) {
+                {/* bloco removido — JSX inválido */}
                     alert("Por favor introduza o seu e-mail!");
                     return;
                   }
@@ -285,7 +285,7 @@ export default function AuthForm({
                 <span>Enviar E-mail de Desbloqueio</span>
               </button>
             </div>
-          )}
+                {/* bloco removido — JSX inválido */}
 
           <button
             type="button"
@@ -366,7 +366,7 @@ export default function AuthForm({
                 ></div>
               </div>
             </div>
-          )}
+                {/* bloco removido — JSX inválido */}
 
           {/* Action Buttons */}
           <div className="pt-1 space-y-2">
@@ -405,11 +405,11 @@ export default function AuthForm({
                 >
                   <span>ðŸ›¡ Logs Supabase</span>
                 </button>
-              )}
+                {/* bloco removido — JSX inválido */}
             </div>
           </div>
         </form>
-      )}
+                {/* bloco removido — JSX inválido */}
 
       <div className="pt-3 border-t border-slate-800/80 flex justify-between items-center text-[9px] text-slate-500 font-mono">
         <span>SECURE SUPABASE AUTH</span>
