@@ -1,10 +1,10 @@
 ﻿import { Outlet } from "react-router-dom";
-import Layout from "./Layout"; // mantém o layout do AI Studio
+import LayoutTop from "../components/LayoutTop";
 
 export default function AIStudioApp() {
   return (
-    <Layout>
+    <LayoutTop>
       <Outlet />
-    </Layout>
+    </LayoutTop>
   );
 }
