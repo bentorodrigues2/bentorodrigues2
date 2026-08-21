@@ -1,40 +1,32 @@
 import React from "react";
-// import removido ó authService.ts n„o existe
 
-interface AuthModalProps {
-  onClose: () => void;
-  onLoginSuccess?: (email: string) => void;
-// linha removida ó funÁ„o inexistente
-}
-
-// linha removida ó funÁ„o inexistente
+export default function AuthModal() {
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in"
-      onClick={onClose}
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+      }}
     >
-      <div 
-        className="relative z-50"
-        onClick={(e) => e.stopPropagation()}
+      <div
+        style={{
+          background: "white",
+          padding: "20px",
+          borderRadius: "8px",
+          minWidth: "300px",
+        }}
       >
-        <button
-          onClick={onClose}
-          className="absolute -top-3 -right-3 z-10 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white h-8 w-8 rounded-full border border-slate-700 flex items-center justify-center font-bold text-sm shadow-lg transition-colors cursor-pointer"
-          title="Fechar Portal"
-        >
-          ‚úï
-        </button>
-
-        <AuthForm 
-          onLoginSuccess={(email) => {
-            if (onLoginSuccess) {
-              onLoginSuccess(email);
-            }
-          }}
-// linha removida ó funÁ„o inexistente
-        />
+        <h2>√Årea Pessoal</h2>
+        <p>Autentica√ß√£o ainda n√£o implementada.</p>
       </div>
     </div>
   );
 }
-
