@@ -1,5 +1,6 @@
+﻿import AuthModal from './AuthModal';
 import React, { useState } from "react";
-// import removido � authService.ts n�o existe
+// import removido — authService.ts não existe
 import "./LayoutTop.css";
 
 interface LayoutTopProps {
@@ -21,7 +22,7 @@ export default function LayoutTop({ onLoginSuccess }: LayoutTopProps) {
           className="area-pessoal-btn"
           onClick={() => setShowAuth(true)}
         >
-          Área Pessoal
+          Ãrea Pessoal
         </button>
       </div>
 
