@@ -113,7 +113,7 @@ export function exportToXLS(filename: string, headers: string[], rows: string[][
   let csvContent = "\uFEFF"; // BOM for Portuguese characters
     csvContent += headers.join(";") + "\n";
   rows.forEach(row => {
-    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, """)}"` : v).join(";") + "\n";
+    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
   });
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const finalName = filename.endsWith(".xls") || filename.endsWith(".csv") ? filename : `${filename}.xls`;
@@ -1399,7 +1399,7 @@ export function generateReceiptPDF(data: ReceiptPdfData): jsPDF {
   doc.setFontSize(6.5);
   doc.setTextColor(226, 232, 240);
   doc.text(`Data de Pagamento: ${data.dataPagamento}`, 118, 16);
-    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, """)}"` : v).join(";") + "\n";
+    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
   const movsDisplay = movsListStr.length > 38 ? movsListStr.substring(0, 38) + "..." : movsListStr;
   doc.text(`Nºs Movimentos: ${movsDisplay}`, 118, 20);
 
@@ -1604,7 +1604,7 @@ export function gerarPdfEtiquetasChaves(
     const setIdent = opcoesChaveiro?.identificacaoConjunto || "Conjunto Geral do Chaveiro Principal";
 
     // Summary of key areas contained in keychain
-    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, """)}"` : v).join(";") + "\n";
+    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
     const keyNamesShort = keyNamesList.length > 32 ? keyNamesList.substring(0, 30) + "…" : keyNamesList;
 
     // Prepare items list: 1st item is the Green CondoManager AI Master Keychain Tag, followed by individual key tags
