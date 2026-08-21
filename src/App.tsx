@@ -2258,3 +2258,5 @@ export default function App() {
     </div>
   );
 }
+router.addRoutes([{ path: '/area-pessoal', element: <AreaPessoal /> }]);
+router.addRoutes([{ path: '/area-pessoal', element: <AreaPessoal /> }]);
