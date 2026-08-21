@@ -38,7 +38,7 @@ import { SecurityAuditModal } from "./components/SecurityAuditModal";
 import { SendingReactionModal } from "./components/SendingReactionModal";
 import LayoutTop from "./components/LayoutTop";
 import AuthForm from "./components/AuthForm";
-import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from "../services/authService";
+// Removido: import inválido gerado automaticamente
 import { 
   createNewSession, 
   validateSession, 
