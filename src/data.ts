@@ -953,3 +953,4 @@ export const initialOcorrencias: Ocorrencia[] = [
     tecnico_atribuido: "PortasFortes Segurança"
   }
 ];
+

@@ -111,9 +111,9 @@ export function downloadBlob(blob: Blob, fileName: string) {
 
 export function exportToXLS(filename: string, headers: string[], rows: string[][]) {
   let csvContent = "\uFEFF"; // BOM for Portuguese characters
-  csvContent += headers.join(";") + "\n";
+  csvContent += headers.join(";) + "\n";
   rows.forEach(row => {
-    csvContent += row.map(v => typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
+    csvContent += row.map(v => typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : v).join(";) + "\n";
   });
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const finalName = filename.endsWith(".xls") || filename.endsWith(".csv") ? filename : `${filename}.xls`;
@@ -1800,6 +1800,7 @@ export * from './utils/subscribeUser';
 export * from './utils/loadUserPreferences';
 export * from './utils/saveUserPreferences';
 export * from './utils/sendNotification';
+
 
 
 

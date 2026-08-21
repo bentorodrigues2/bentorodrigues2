@@ -260,3 +260,4 @@ export function validateRoleAccess(role: UserRole, targetTab: string): { allowed
   }
   return { allowed: false, redirectTab: config.defaultTab || "painel" };
 }
+

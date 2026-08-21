@@ -481,3 +481,4 @@ export function InventarioTecnico({ predio, loggedUser }: InventarioTecnicoProps
     </div>
   );
 }
+

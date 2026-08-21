@@ -49,3 +49,4 @@ export default function LayoutTop({ onLoginSuccess }: LayoutTopProps) {
     </div>
   );
 }
+

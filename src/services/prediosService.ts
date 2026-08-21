@@ -14,3 +14,4 @@ export async function updatePredio(id_predio, updates) {
 export async function getPredios() {
   return await supabase.from('predios').select('*');
 }
+

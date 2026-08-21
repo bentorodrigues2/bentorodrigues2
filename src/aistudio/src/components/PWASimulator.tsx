@@ -3770,3 +3770,4 @@ export function PWASimulator({
     </div>
   );
 }
+

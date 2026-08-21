@@ -186,3 +186,4 @@ export function GestaoContas({ predio, contas, onAddConta, onSetPrincipalConta, 
     </div>
   );
 }
+

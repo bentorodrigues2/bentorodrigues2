@@ -14,3 +14,4 @@ export async function updateProfile(userId, updates) {
     .update(updates)
     .eq('id', userId);
 }
+

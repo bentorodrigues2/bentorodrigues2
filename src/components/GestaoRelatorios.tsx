@@ -449,3 +449,4 @@ export function GestaoRelatorios({ predio, loggedUser, movimentos = [], fracoes 
     </div>
   );
 }
+

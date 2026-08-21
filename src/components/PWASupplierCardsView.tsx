@@ -610,3 +610,4 @@ export function PWASupplierCardsView({
     </div>
   );
 }
+

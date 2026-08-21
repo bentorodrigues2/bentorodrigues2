@@ -37,3 +37,4 @@ export default function AuthModal({ onClose, onLoginSuccess, onOpenSecurityLogs 
     </div>
   );
 }
+

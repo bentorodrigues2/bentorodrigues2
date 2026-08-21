@@ -319,3 +319,4 @@ export function GestaoFundoReserva({ predio, loggedUser }: GestaoFundoReservaPro
     </div>
   );
 }
+

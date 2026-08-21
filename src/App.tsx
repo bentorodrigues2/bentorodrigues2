@@ -2260,3 +2260,4 @@ export default function App() {
 }
 router.addRoutes([{ path: '/area-pessoal', element: <AreaPessoal /> }]);
 router.addRoutes([{ path: '/area-pessoal', element: <AreaPessoal /> }]);
+

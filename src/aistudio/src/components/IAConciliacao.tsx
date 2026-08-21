@@ -197,3 +197,4 @@ export function IAConciliacao({ predio, fracoes, avisos, setAvisos, movements, s
     </div>
   );
 }
+
