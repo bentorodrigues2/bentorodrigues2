@@ -80,7 +80,8 @@ import {
 import { motion } from "motion/react";
 import { formatDatePT, DEMO_ACCOUNTS_MAP, resolveUserByEmail } from "../utils";
 import PWACondominoView from "./PWACondominoView";
-const condoLogo = "/marca/20-Logotipo Horizontal com fundo.png";
+import { DraggableAIFloatingButton } from "./DraggableAIFloatingButton";
+const condoLogo = "/marca/02-versao-horizontal.png";
 const logoutIcon = "/estados-acoes/17-desligar.png";
 const terminarSessaoIcon = "/estados-acoes/16-terminar-sessao.png";
 const condomanagerLogo = condoLogo;
@@ -3725,6 +3726,14 @@ export function PWASimulator({
                 </div>
               );
             })()}
+
+            {/* FLOATING DRAGGABLE AI ASSISTANT FOR ADMIN & GESTOR (MOBILE VIEW) */}
+            <DraggableAIFloatingButton
+              loggedUser={loggedUser}
+              predio={predio}
+              isPWA={true}
+              className="!absolute !bottom-16 !right-3"
+            />
 
           </div>
         </div>

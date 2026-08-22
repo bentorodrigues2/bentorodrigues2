@@ -184,6 +184,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
   const [codigoPostal, setCodigoPostal] = useState("");
   const [localidade, setLocalidade] = useState("");
   const [nif, setNif] = useState("");
+  const [emailPredio, setEmailPredio] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
 
   const [elevador, setElevador] = useState(false);
@@ -214,6 +215,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
         setCodigoPostal(p.codigo_postal || "");
         setLocalidade(p.localidade || "");
         setNif(p.nif || "");
+        setEmailPredio(p.email || "");
         setFoto(p.foto || null);
 
         setElevador(!!p.patrimonio?.tem_elevador);
@@ -245,6 +247,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
     setCodigoPostal("");
     setLocalidade("");
     setNif("");
+    setEmailPredio("");
     setFoto(null);
     setElevador(false);
     setNumElevadores(0);
@@ -336,6 +339,8 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
         codigo_postal: codigoPostal,
         localidade,
         nif,
+        email: emailPredio.trim() || null,
+        autoresponder_ativo: true,
         foto,
         patrimonio: patrimonioObj
       };
@@ -353,6 +358,8 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
         codigo_postal: codigoPostal,
         localidade,
         nif,
+        email: emailPredio.trim() || null,
+        autoresponder_ativo: true,
         foto,
         patrimonio: patrimonioObj
       };
@@ -1084,6 +1091,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
                   <th className="py-3 px-4">Edifício / Foto</th>
                   <th className="py-3 px-4">Morada & Localidade</th>
                   <th className="py-3 px-4">NIF</th>
+                  <th className="py-3 px-4">E-mail Oficial (IA / Autoresponder)</th>
                   <th className="py-3 px-4">Património Comum</th>
                   <th className="py-3 px-4 text-right">Ações</th>
                 </tr>
@@ -1091,7 +1099,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
               <tbody className="divide-y divide-slate-100">
                 {prediosFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400">
+                    <td colSpan={6} className="py-8 text-center text-slate-400">
                       <i className="fa-solid fa-building-circle-exclamation text-2xl mb-2 block"></i>
                       Nenhum prédio encontrado com os critérios de pesquisa.
                     </td>
@@ -1147,6 +1155,23 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
                         {/* NIF */}
                         <td className="py-3 px-4 font-mono-custom font-bold text-slate-700">
                           {p.nif}
+                        </td>
+
+                        {/* E-mail Oficial & Autoresponder */}
+                        <td className="py-3 px-4">
+                          {p.email ? (
+                            <div className="space-y-1">
+                              <span className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                                <i className="fa-solid fa-envelope text-[11px]"></i>
+                                {p.email}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+                                <i className="fa-solid fa-robot text-[8px]"></i> Autoresponder Ativo
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">Não configurado</span>
+                          )}
                         </td>
 
                         {/* Património */}
@@ -1297,6 +1322,32 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
           <div className="flex flex-col">
             <label className="text-xs font-semibold text-slate-500 mb-1">Localidade *</label>
             <input type="text" value={localidade} readOnly className="border border-slate-200 bg-slate-100 px-3 py-2 text-sm rounded-lg focus:outline-none" placeholder="Preenchimento automático" />
+          </div>
+        </div>
+
+        {/* E-MAIL OFICIAL DO PRÉDIO / AUTORESPONDER & IA */}
+        <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800/40 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-black text-emerald-900 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+              <i className="fa-solid fa-robot text-emerald-600"></i>
+              <span>E-mail Oficial do Prédio (Canal de Autoresponder & Inteligência Artificial)</span>
+            </label>
+            <span className="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-2xs">
+              🤖 Pré-definido IA & Triagem
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Este é o e-mail pré-definido para o Autoresponder automático e todas as comunicações ligadas a este prédio. A Inteligência Artificial (Google AI Studio) utilizará este canal para ler as solicitações dos condóminos, consultar o histórico da fração e responder autonomamente com precisão.
+          </p>
+          <div className="relative">
+            <i className="fa-solid fa-envelope absolute left-3.5 top-3 text-emerald-600 text-sm"></i>
+            <input
+              type="email"
+              value={emailPredio}
+              onChange={e => setEmailPredio(e.target.value)}
+              placeholder={`Ex: ${nome ? nome.toLowerCase().replace(/[^a-z0-9]/g, ".") : "edificio"}.${codigoPostal ? codigoPostal.split("-")[0] : "condo"}@condomanager.pt`}
+              className="w-full bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
           </div>
         </div>
 

@@ -39,6 +39,8 @@ export interface Predio {
   patrimonio: Patrimonio;
   foto?: string | null;
   iban?: string | null;
+  email?: string | null; // E-mail oficial do prédio/condomínio (pré-definido para Autoresponder e IA)
+  autoresponder_ativo?: boolean;
 }
 
 export interface Conta {
@@ -215,7 +217,7 @@ export interface Documento {
   data_arquivamento?: string;
   tipo_arquivo?: "documento" | "fotografia";
   url_foto?: string;
-  relevancia_perfis?: ("ADMIN" | "EMPRESA_GESTORA" | "USER" | "TECNICO" | "LIMPEZAS" | "JURIDICO" | "AUDITOR" | "CONTABILISTA")[];
+  relevancia_perfis?: ("ADMIN" | "EMPRESA_GESTORA" | "USER" | "INQUILINO" | "TECNICO" | "LIMPEZAS" | "JURIDICO" | "AUDITOR" | "CONTABILISTA")[];
 }
 
 export interface OcorrenciaFoto {
@@ -241,7 +243,7 @@ export interface Ocorrencia {
 export interface LoggedUser {
   nome: string;
   email: string;
-  role: "ADMIN" | "EMPRESA_GESTORA" | "USER" | "TECNICO" | "LIMPEZAS" | "JURIDICO" | "AUDITOR" | "CONTABILISTA";
+  role: "ADMIN" | "GESTOR" | "EMPRESA_GESTORA" | "USER" | "INQUILINO" | "TECNICO" | "LIMPEZAS" | "JURIDICO" | "AUDITOR" | "CONTABILISTA";
 }
 
 export interface Reserva {
@@ -263,18 +265,47 @@ export interface CapacidadeLimite {
   limite: number;
 }
 
+export interface GestorCarteira {
+  id_gestor: string;
+  nome: string;
+  tlm: string;
+  email: string;
+  predios_atribuidos: string[]; // IDs dos prédios atribuídos
+  perfil: "GESTOR" | "ADMIN"; // "GESTOR" (Gestor de Condomínio) ou "ADMIN" (Administrador Oficial)
+  status_acesso: "ATIVO" | "PENDENTE_PRIMEIRO_ACESSO";
+  password_provisoria?: string;
+  email_boas_vindas_enviado?: boolean;
+  data_atribuicao?: string;
+  foto?: string;
+}
+
+export interface EmpresaGestoraConfig {
+  nome_empresa: string;
+  nif: string;
+  email_corporativo: string;
+  telefone: string;
+  website?: string;
+  logo?: string;
+  cor_branding?: string;
+  // Configurações estratégicas do Autoresponder e IA
+  email_autoresponder_principal: "EMPRESA" | "CONDOMINIO";
+  email_gestao_ia: "EMPRESA" | "CONDOMINIO";
+  gestores: GestorCarteira[];
+}
+
 export interface AuditLogEntry {
   id_log: string;
   id_predio: string;
   usuario: string;
   email: string;
   role: string;
-  data_hora: string; // ISO string or DD-MM-YYYY HH:mm:ss
-  seccao: "Financeiro" | "Documental" | "Assembleias" | "Frações" | "Ocorrências" | "Configurações" | "Reservas" | "Geral";
+  data_hora: string;
+  seccao: string;
   descricao: string;
   valores_anteriores?: string;
   valores_posteriores?: string;
-  ip?: string;
   dispositivo?: string;
+  ip?: string;
+  status?: string;
 }
 

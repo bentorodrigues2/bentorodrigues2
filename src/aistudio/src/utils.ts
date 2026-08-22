@@ -1,20 +1,27 @@
 import { jsPDF } from "jspdf";
-import { LOGO_HORIZONTAL_BASE64, WATERMARK_BASE64 } from "./assets/logoBase64";
+import { Predio, GestorCarteira } from "./types";
+import { 
+  LOGO_HORIZONTAL_BASE64, 
+  WATERMARK_BASE64, 
+  getLogoHorizontalBase64, 
+  getWatermarkBase64 
+} from "./assets/logoBase64";
 
 // Helper to draw subtle background watermark on PDF pages
 export function addPdfWatermark(doc: jsPDF) {
   try {
-    if (WATERMARK_BASE64) {
+    const wm = (typeof window !== "undefined" && (window as any).__WATERMARK_B64) || WATERMARK_BASE64;
+    if (wm && wm.length > 50) {
       try {
         const gState = (doc as any).GState ? new (doc as any).GState({ opacity: 0.08 }) : null;
         if (gState) (doc as any).setGState(gState);
-        doc.addImage(WATERMARK_BASE64, "PNG", 45, 65, 120, 120);
+        doc.addImage(wm, "PNG", 45, 65, 120, 120);
         if (gState) {
           const resetState = new (doc as any).GState({ opacity: 1.0 });
           (doc as any).setGState(resetState);
         }
       } catch (e) {
-        doc.addImage(WATERMARK_BASE64, "PNG", 45, 65, 120, 120);
+        doc.addImage(wm, "PNG", 45, 65, 120, 120);
       }
     }
   } catch (err) {
@@ -26,10 +33,18 @@ export function addPdfWatermark(doc: jsPDF) {
 export function addPdfHeaderWithLogo(doc: jsPDF, buildingName?: string): number {
   addPdfWatermark(doc);
   try {
-    // Dark container pill behind logo to ensure high contrast for CondoManager lettering on white backgrounds
-    doc.setFillColor(15, 23, 42); // Dark slate (#0f172a)
-    doc.roundedRect(70, 7, 70, 16, 3, 3, "F");
-    doc.addImage(LOGO_HORIZONTAL_BASE64, "PNG", 72.5, 9, 65, 12);
+    const logo = (typeof window !== "undefined" && (window as any).__LOGO_B64) || LOGO_HORIZONTAL_BASE64;
+    if (logo && logo.length > 100) {
+      // Dark container pill behind logo to ensure high contrast for CondoManager lettering on white backgrounds
+      doc.setFillColor(15, 23, 42); // Dark slate (#0f172a)
+      doc.roundedRect(70, 7, 70, 16, 3, 3, "F");
+      doc.addImage(logo, "PNG", 72.5, 9, 65, 12);
+    } else {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(15, 23, 42);
+      doc.text("CONDOMANAGER AI", 105, 16, { align: "center" });
+    }
   } catch (e) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
@@ -97,9 +112,9 @@ export function downloadBlob(blob: Blob, fileName: string) {
 
 export function exportToXLS(filename: string, headers: string[], rows: string[][]) {
   let csvContent = "\uFEFF"; // BOM for Portuguese characters
-  csvContent += headers.join(";) + "\n";
+  csvContent += headers.join(";") + "\n";
   rows.forEach(row => {
-    csvContent += row.map(v => typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : v).join(";) + "\n";
+    csvContent += row.map(v => typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
   });
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const finalName = filename.endsWith(".xls") || filename.endsWith(".csv") ? filename : `${filename}.xls`;
@@ -913,7 +928,7 @@ export function downloadListaCondominosPDF(predioNome: string = "Condomínio Act
   }
 }
 
-export const DEMO_ACCOUNTS_MAP: Record<string, { role: "ADMIN" | "EMPRESA_GESTORA" | "USER" | "TECNICO" | "LIMPEZAS" | "JURIDICO" | "AUDITOR" | "CONTABILISTA"; nome: string; pass: string; title: string }> = {
+export const DEMO_ACCOUNTS_MAP: Record<string, { role: "ADMIN" | "EMPRESA_GESTORA" | "USER" | "INQUILINO" | "TECNICO" | "LIMPEZAS" | "JURIDICO" | "AUDITOR" | "CONTABILISTA"; nome: string; pass: string; title: string }> = {
   // Administrador Interno
   "admin@condomanager.pt": { role: "ADMIN", nome: "Carlos Administrador", pass: "Admin12345!", title: "👑 Administrador Interno" },
   "carlos.adm@condomanager.pt": { role: "ADMIN", nome: "Carlos Administrador", pass: "Admin12345!", title: "👑 Administrador Interno" },
@@ -922,10 +937,15 @@ export const DEMO_ACCOUNTS_MAP: Record<string, { role: "ADMIN" | "EMPRESA_GESTOR
   "gestora@condomanager.pt": { role: "EMPRESA_GESTORA", nome: "Gestão Forte, Lda", pass: "Gestora12345!", title: "🏢 Empresa Gestora" },
   "geral@gestaoforte.pt": { role: "EMPRESA_GESTORA", nome: "Gestão Forte, Lda", pass: "Gestora12345!", title: "🏢 Empresa Gestora" },
 
-  // Portal do Condómino
-  "condomino@condomanager.pt": { role: "USER", nome: "Ana Silva (Fração A)", pass: "Condomino12345!", title: "🏠 Portal do Condómino" },
-  "ana.silva@gmail.com": { role: "USER", nome: "Ana Silva (Fração A)", pass: "Condomino12345!", title: "🏠 Portal do Condómino" },
-  "amelia.sousa@yahoo.com": { role: "USER", nome: "D.ª Amélia Sousa (Fração B)", pass: "Condomino12345!", title: "🏠 Portal do Condómino" },
+  // Portal do Condómino (Proprietário)
+  "condomino@condomanager.pt": { role: "USER", nome: "Ana Silva (Fração A)", pass: "Condomino12345!", title: "🏠 Portal do Condómino (Proprietário)" },
+  "ana.silva@gmail.com": { role: "USER", nome: "Ana Silva (Fração A)", pass: "Condomino12345!", title: "🏠 Portal do Condómino (Proprietário)" },
+  "amelia.sousa@yahoo.com": { role: "USER", nome: "D.ª Amélia Sousa (Fração B)", pass: "Condomino12345!", title: "🏠 Portal do Condómino (Proprietário)" },
+
+  // Inquilino / Arrendatário (Sem acesso a dados financeiros)
+  "inquilino@condomanager.pt": { role: "INQUILINO", nome: "Bruno Ferreira (Inquilino Fração A)", pass: "Inquilino12345!", title: "🔑 Portal do Inquilino / Arrendatário" },
+  "bruno.inquilino@gmail.com": { role: "INQUILINO", nome: "Bruno Ferreira (Inquilino Fração A)", pass: "Inquilino12345!", title: "🔑 Portal do Inquilino / Arrendatário" },
+  "ricardo.loc@gmail.com": { role: "INQUILINO", nome: "Ricardo Inquilino (Fração A)", pass: "Inquilino12345!", title: "🔑 Portal do Inquilino / Arrendatário" },
 
   // Técnico / Vistorias
   "tecnico@condomanager.pt": { role: "TECNICO", nome: "Eng. Rui Melo", pass: "Tecnico12345!", title: "🔍 Inspetor Técnico" },
@@ -967,6 +987,9 @@ export function resolveUserByEmail(rawEmail: string) {
   }
   if (cleanEmail.includes('gestor') || cleanEmail.includes('geral') || cleanEmail.includes('empresa') || cleanEmail.includes('forte')) {
     return { role: "EMPRESA_GESTORA" as const, nome: "Gestão Forte, Lda", pass: "Gestora12345!", title: "🏢 Empresa Gestora", email: cleanEmail };
+  }
+  if (cleanEmail.includes('inquilino') || cleanEmail.includes('arrendatario') || cleanEmail.includes('locatario') || cleanEmail.includes('ricardo.loc') || cleanEmail.includes('bruno.inquilino')) {
+    return { role: "INQUILINO" as const, nome: "Bruno Ferreira (Inquilino)", pass: "Inquilino12345!", title: "🔑 Portal do Inquilino / Arrendatário", email: cleanEmail };
   }
   if (cleanEmail.includes('tecnic') || cleanEmail.includes('melo') || cleanEmail.includes('melim') || cleanEmail.includes('vistoria')) {
     return { role: "TECNICO" as const, nome: "Eng. Rui Melo", pass: "Tecnico12345!", title: "🔍 Inspetor Técnico", email: cleanEmail };
@@ -1550,7 +1573,15 @@ export function downloadReceiptPDF(data: ReceiptPdfData, customFilename?: string
   }
 }
 
-export function gerarPdfEtiquetasChaves(nomePredio: string, chaves: any[]) {
+export function gerarPdfEtiquetasChaves(
+  nomePredio: string,
+  chaves: any[],
+  opcoesChaveiro?: {
+    numChaveiro?: string;
+    codigoConjunto?: string;
+    identificacaoConjunto?: string;
+  }
+) {
   try {
     const doc = new jsPDF({ orientation: "p", unit: "mm", format: "a4" });
     
@@ -1573,10 +1604,34 @@ export function gerarPdfEtiquetasChaves(nomePredio: string, chaves: any[]) {
     doc.setTextColor(100, 116, 139);
     doc.text(`Dimensões: 3,0 cm x 1,5 cm (30x15 mm) • Recorte pelas linhas tracejadas`, marginX + 105, 10);
 
+    const numChaveiroAtribuido = opcoesChaveiro?.numChaveiro || chaves.find(c => c.num_chaveiro && c.num_chaveiro.trim().length > 0)?.num_chaveiro || "Chaveiro #1";
+    
+    // Extract base prefix from building name or key codes (e.g. BR2PP)
+    const firstKeyWithCode = chaves.find(c => c.codigo_chave && c.codigo_chave.includes(" "));
+    const prefixoIniciais = firstKeyWithCode ? firstKeyWithCode.codigo_chave.split(" ")[0] : "CHV";
+    const masterCode = opcoesChaveiro?.codigoConjunto || `${prefixoIniciais}-CHV-${numChaveiroAtribuido.replace(/[^0-9]/g, "") || "01"}`;
+    const setIdent = opcoesChaveiro?.identificacaoConjunto || "Conjunto Geral do Chaveiro Principal";
+
+    // Summary of key areas contained in keychain
+    const keyNamesList = chaves.map(c => c.area_nome || "Chave").join(", ");
+    const keyNamesShort = keyNamesList.length > 32 ? keyNamesList.substring(0, 30) + "…" : keyNamesList;
+
+    // Prepare items list: 1st item is the Green CondoManager AI Master Keychain Tag, followed by individual key tags
+    const itemsToPrint = [
+      { 
+        isGreenKeychainTag: true, 
+        num_chaveiro: numChaveiroAtribuido,
+        codigo_conjunto: masterCode,
+        identificacao_conjunto: setIdent,
+        resumo_chaves: keyNamesShort
+      },
+      ...chaves.map(c => ({ isGreenKeychainTag: false, ...c }))
+    ];
+
     let col = 0;
     let row = 0;
     
-    chaves.forEach((chave, index) => {
+    itemsToPrint.forEach((item, index) => {
       if (index > 0 && index % (cols * rowsPerPage) === 0) {
         doc.addPage();
         col = 0;
@@ -1589,58 +1644,150 @@ export function gerarPdfEtiquetasChaves(nomePredio: string, chaves: any[]) {
       
       const x = marginX + col * (labelWidth + gapX);
       const y = marginY + row * (labelHeight + gapY);
-      
-      // Outer dotted line
-      doc.setDrawColor(148, 163, 184);
-      doc.setLineWidth(0.2);
-      try {
-        (doc as any).setLineDashPattern([1, 1], 0);
-      } catch (e) {}
-      doc.rect(x, y, labelWidth, labelHeight);
-      
-      try {
-        (doc as any).setLineDashPattern([], 0);
-      } catch (e) {}
-      
-      // Accent bar
-      if (chave.no_claviculario) {
-        doc.setFillColor(16, 185, 129);
-      } else {
-        doc.setFillColor(100, 116, 139);
-      }
-      doc.rect(x + 0.3, y + 0.3, 1.5, labelHeight - 0.6, "F");
-      
-      // Keyhole ring circle indicator
-      doc.setFillColor(241, 245, 249);
-      doc.setDrawColor(203, 213, 225);
-      doc.circle(x + 3.2, y + labelHeight / 2, 0.9, "FD");
-      
-      // Building name
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(5);
-      doc.setTextColor(71, 85, 105);
+
       const bNameShort = (nomePredio || "Condomínio").length > 18 ? (nomePredio || "Condomínio").substring(0, 18) + "…" : (nomePredio || "Condomínio");
-      doc.text(bNameShort.toUpperCase(), x + 5, y + 3.2);
-      
-      // Key Name
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(6.5);
-      doc.setTextColor(15, 23, 42);
-      const keyNameShort = (chave.area_nome || "Chave").length > 17 ? (chave.area_nome || "Chave").substring(0, 16) + "…" : (chave.area_nome || "Chave");
-      doc.text(keyNameShort, x + 5, y + 6.8);
-      
-      // Key Code
-      doc.setFont("courier", "bold");
-      doc.setFontSize(6);
-      doc.setTextColor(30, 58, 138);
-      doc.text(chave.codigo_chave || `CHV-${index + 1}`, x + 5, y + 10.2);
-      
-      // Quantity and Chaveiro Num
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(5);
-      doc.setTextColor(16, 185, 129);
-      const chaveiroTxt = chave.num_chaveiro ? ` • Chav. ${chave.num_chaveiro}` : "";
-      doc.text(`Qtd: ${chave.quantidade || 1} un${chaveiroTxt}`, x + 5, y + 13.5);
+
+      if (item.isGreenKeychainTag) {
+        // --- 1. ETIQUETA VERDE CONDOMANAGER AI (CHAVEIRO PRINCIPAL) ---
+        doc.setDrawColor(4, 120, 87);
+        doc.setLineWidth(0.2);
+        try {
+          (doc as any).setLineDashPattern([1, 1], 0);
+        } catch (e) {}
+        doc.rect(x, y, labelWidth, labelHeight);
+        
+        try {
+          (doc as any).setLineDashPattern([], 0);
+        } catch (e) {}
+
+        // Solid CondoManager AI Green Background
+        doc.setFillColor(5, 150, 105); // Emerald-600
+        doc.rect(x + 0.2, y + 0.2, labelWidth - 0.4, labelHeight - 0.4, "F");
+
+        // Watermark image adapted to space (/public/marca/19-marca-dagua-logo-cinza-claro.png)
+        const wmTag = (typeof window !== "undefined" && (window as any).__WATERMARK_B64) || WATERMARK_BASE64;
+        if (wmTag && wmTag.length > 50) {
+          try {
+            doc.saveGraphicsState?.();
+            if ((doc as any).GState) {
+              doc.setGState(new (doc as any).GState({ opacity: 0.25 }));
+            }
+            doc.addImage(wmTag, "PNG", x + 5, y + 1.5, 20, 12);
+            if ((doc as any).GState) {
+              doc.setGState(new (doc as any).GState({ opacity: 1.0 }));
+            }
+            doc.restoreGraphicsState?.();
+          } catch (e) {
+            console.warn("Watermark error on green tag:", e);
+          }
+        }
+
+        // White Key Ring circle indicator
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(209, 250, 229);
+        doc.circle(x + 3.2, y + labelHeight / 2, 0.9, "FD");
+
+        // Brand & Building Header
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(4.2);
+        doc.setTextColor(236, 253, 245);
+        doc.text(`CONDOMANAGER AI • ${bNameShort.toUpperCase()}`, x + 5, y + 3.0);
+
+        // Assigned Keychain Number & Master Code
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(5.5);
+        doc.setTextColor(255, 255, 255);
+        doc.text(`CHAVEIRO Nº ${item.num_chaveiro}`, x + 5, y + 5.8);
+
+        // Master Set Code (CÓDIGO DO CONJUNTO)
+        doc.setFont("courier", "bold");
+        doc.setFontSize(5.5);
+        doc.setTextColor(254, 240, 138); // Yellow-200 for code pop
+        doc.text(`CÓD: ${item.codigo_conjunto}`, x + 5, y + 8.8);
+
+        // Identification & Key Summary
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(4.2);
+        doc.setTextColor(236, 253, 245);
+        const setIdentShort = (item.identificacao_conjunto || "Conjunto Geral").length > 22 ? (item.identificacao_conjunto || "Conjunto Geral").substring(0, 20) + "…" : (item.identificacao_conjunto || "Conjunto Geral");
+        doc.text(`${setIdentShort} (${chaves.length} Chvs)`, x + 5, y + 11.4);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(3.8);
+        doc.setTextColor(209, 250, 229);
+        doc.text(item.resumo_chaves || "Chaves de acesso comum", x + 5, y + 13.8);
+
+      } else {
+        // --- 2. ETIQUETA INDIVIDUAL DE CHAVE COM MARCA DE ÁGUA ---
+        // Outer dotted line
+        doc.setDrawColor(148, 163, 184);
+        doc.setLineWidth(0.2);
+        try {
+          (doc as any).setLineDashPattern([1, 1], 0);
+        } catch (e) {}
+        doc.rect(x, y, labelWidth, labelHeight);
+        
+        try {
+          (doc as any).setLineDashPattern([], 0);
+        } catch (e) {}
+        
+        // Accent bar
+        if (item.no_claviculario) {
+          doc.setFillColor(16, 185, 129);
+        } else {
+          doc.setFillColor(100, 116, 139);
+        }
+        doc.rect(x + 0.3, y + 0.3, 1.5, labelHeight - 0.6, "F");
+        
+        // Keyhole ring circle indicator
+        doc.setFillColor(241, 245, 249);
+        doc.setDrawColor(203, 213, 225);
+        doc.circle(x + 3.2, y + labelHeight / 2, 0.9, "FD");
+
+        // Watermark image adapted to space (/public/marca/19-marca-dagua-logo-cinza-claro.png)
+        const wmIndividual = (typeof window !== "undefined" && (window as any).__WATERMARK_B64) || WATERMARK_BASE64;
+        if (wmIndividual && wmIndividual.length > 50) {
+          try {
+            doc.saveGraphicsState?.();
+            if ((doc as any).GState) {
+              doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
+            }
+            doc.addImage(wmIndividual, "PNG", x + 5, y + 1.5, 20, 12);
+            if ((doc as any).GState) {
+              doc.setGState(new (doc as any).GState({ opacity: 1.0 }));
+            }
+            doc.restoreGraphicsState?.();
+          } catch (e) {
+            console.warn("Watermark error on key tag:", e);
+          }
+        }
+        
+        // Building name
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(5);
+        doc.setTextColor(71, 85, 105);
+        doc.text(bNameShort.toUpperCase(), x + 5, y + 3.2);
+        
+        // Key Name
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.5);
+        doc.setTextColor(15, 23, 42);
+        const keyNameShort = (item.area_nome || "Chave").length > 17 ? (item.area_nome || "Chave").substring(0, 16) + "…" : (item.area_nome || "Chave");
+        doc.text(keyNameShort, x + 5, y + 6.8);
+        
+        // Key Code
+        doc.setFont("courier", "bold");
+        doc.setFontSize(6);
+        doc.setTextColor(30, 58, 138);
+        doc.text(item.codigo_chave || `CHV-${index}`, x + 5, y + 10.2);
+        
+        // Quantity and Chaveiro Num
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(5);
+        doc.setTextColor(16, 185, 129);
+        const chaveiroTxt = item.num_chaveiro ? ` • Chav. ${item.num_chaveiro}` : ` • Chav. ${numChaveiroAtribuido}`;
+        doc.text(`Qtd: ${item.quantidade || 1} un${chaveiroTxt}`, x + 5, y + 13.5);
+      }
 
       col++;
       if (col >= cols) {
@@ -1656,13 +1803,247 @@ export function gerarPdfEtiquetasChaves(nomePredio: string, chaves: any[]) {
   }
 }
 
+/**
+ * Gera o PDF Oficial de Boas-Vindas, Atribuição de Perfil e Credenciais Provisórias para Gestores da Empresa
+ */
+export function gerarPdfBoasVindasGestor(
+  gestor: GestorCarteira,
+  predios: Predio[],
+  empresaNome: string = "Gestão Forte Administrações Lda",
+  logoUrl?: string
+) {
+  try {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    addPdfWatermark(doc);
+
+    // Header Background
+    doc.setFillColor(15, 23, 42); // Slate-900
+    doc.rect(0, 0, 210, 42, "F");
+
+    // Accent line
+    doc.setFillColor(16, 185, 129); // Emerald-500
+    doc.rect(0, 41, 210, 2, "F");
+
+    // Title and Company Name
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text(empresaNome.toUpperCase(), 15, 18);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(148, 163, 184);
+    doc.text("SISTEMA INTEGRADO DE GESTÃO DE CONDOMÍNIOS • CONDOMANAGER AI", 15, 26);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(52, 211, 153); // Emerald light
+    doc.text("CREDENCIAL DE ACESSO & MANUAL DE ATRIBUIÇÃO DE CARTEIRA", 15, 34);
+
+    let y = 52;
+
+    // Greeting box
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(15, y, 180, 24, 3, 3, "F");
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(15, y, 180, 24, 3, 3, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Bem-vindo(a), ${gestor.nome}!`, 20, y + 8);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(
+      "Foi-lhe atribuída uma carteira de edifícios na plataforma CondoManager AI. Abaixo encontra os dados de acesso e diretrizes.",
+      20,
+      y + 16
+    );
+
+    y += 32;
+
+    // SECTION 1: PERFIL & DADOS PESSOAIS
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("1. IDENTIFICAÇÃO DO COLABORADOR & PERFIL", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 8;
+
+    // Table of user info
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, y, 180, 26, "F");
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(15, y, 180, 26, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Nome Completo:", 20, y + 7);
+    doc.text("E-mail Profissional:", 20, y + 14);
+    doc.text("Telemóvel Direto:", 20, y + 21);
+
+    doc.text("Perfil Atribuído:", 110, y + 7);
+    doc.text("Data de Atribuição:", 110, y + 14);
+    doc.text("Estado da Conta:", 110, y + 21);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(gestor.nome, 52, y + 7);
+    doc.text(gestor.email, 52, y + 14);
+    doc.text(gestor.tlm || "—", 52, y + 21);
+
+    const perfilStr = gestor.perfil === "ADMIN" ? "👑 Administrador de Condomínio" : "💼 Gestor de Portfólio / Operacional";
+    doc.setTextColor(gestor.perfil === "ADMIN" ? 180 : 16, gestor.perfil === "ADMIN" ? 83 : 185, gestor.perfil === "ADMIN" ? 9 : 129);
+    doc.text(perfilStr, 142, y + 7);
+
+    doc.setTextColor(15, 23, 42);
+    doc.text(gestor.data_atribuicao || new Date().toISOString().split("T")[0], 142, y + 14);
+    doc.setTextColor(217, 119, 6);
+    doc.text("Pendente 1º Acesso", 142, y + 21);
+
+    y += 34;
+
+    // SECTION 2: CREDENCIAIS PROVISÓRIAS & SEGURANÇA
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("2. CREDENCIAIS DE ACESSO PROVISÓRIAS", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 8;
+
+    doc.setFillColor(254, 243, 199); // Amber-100
+    doc.roundedRect(15, y, 180, 32, 3, 3, "F");
+    doc.setDrawColor(245, 158, 11);
+    doc.roundedRect(15, y, 180, 32, 3, 3, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(146, 64, 14); // Amber-900
+    doc.text("ENDEREÇO DA PLATAFORMA: https://condomanager.ai/app", 20, y + 8);
+    doc.text(`UTILIZADOR (E-MAIL): ${gestor.email}`, 20, y + 15);
+    doc.text(`PALAVRA-PASSE PROVISÓRIA: ${gestor.password_provisoria || "Gestor#2026!"}`, 20, y + 22);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(185, 28, 28); // Red-700
+    doc.text("⚠️ OBRIGATÓRIO: No primeiro acesso ao portal, o sistema exigirá a alteração imediata da palavra-passe.", 20, y + 28);
+
+    y += 40;
+
+    // SECTION 3: PRÉDIOS ATRIBUÍDOS & CONTACTOS DISPONÍVEIS
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("3. CARTEIRA DE PRÉDIOS SOB GESTÃO DIRETA", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 7;
+
+    const prediosGeridos = predios.filter(p => gestor.predios_atribuidos.includes(p.id_predio));
+
+    if (prediosGeridos.length === 0) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text("Nenhum prédio diretamente associado no momento.", 20, y + 5);
+      y += 10;
+    } else {
+      prediosGeridos.forEach((p, idx) => {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(15, y, 180, 12, "F");
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(15, y, 180, 12, "S");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`${idx + 1}. ${p.nome || p.morada_linha1}`, 20, y + 5);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Morada: ${p.morada_linha1}, Nº ${p.num_porta} • NIF: ${p.nif} • E-mail Prédio: ${p.email || "—"}`, 20, y + 9.5);
+
+        y += 14;
+      });
+    }
+
+    y += 4;
+
+    // Notice about contacts being visible to condóminos
+    doc.setFillColor(236, 253, 245); // Emerald-50
+    doc.roundedRect(15, y, 180, 16, 2, 2, "F");
+    doc.setDrawColor(16, 185, 129);
+    doc.roundedRect(15, y, 180, 16, 2, 2, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(6, 95, 70);
+    doc.text("📞 DISPONIBILIDADE DE CONTACTOS AOS CONDÓMINOS:", 20, y + 6);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `O seu Nome, E-mail (${gestor.email}) e TLM (${gestor.tlm}) estão visíveis na PWA e Portal dos Condóminos dos prédios atribuídos.`,
+      20,
+      y + 11.5
+    );
+
+    y += 24;
+
+    // SECTION 4: ESCOPO DE COMPETÊNCIAS DO PERFIL
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("4. RESUMO DE FUNCIONALIDADES DISPONÍVEIS", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 7;
+
+    const funcoes = gestor.perfil === "ADMIN" 
+      ? [
+          "• Administração Financeira Total: Emissão de quotas, orçamentos, aprovação de despesas e conciliação bancária IA.",
+          "• Convocatórias & Assembleias Gerais: Redação de atas por IA, gestão de presenças e procurações.",
+          "• Controlo Cadastral & Jurídico: Registo de prédios, frações, autos de vistoria e contencioso/cobrança coerciva.",
+          "• Gestão de Autoresponder & Regras de Prédio: Parametrização da IA Gemini para triagem de e-mails."
+        ]
+      : [
+          "• Gestão Operacional de Ocorrências: Receção, triagem, adjudicação e validação fotográfica de avarias.",
+          "• Supervisão de Limpezas & Vistorias Técnicas: Validação de relatórios técnicos e controlo de chaves do edifício.",
+          "• Comunicação Direta com Condóminos: Emissão de avisos de corte, comunicados e chat de apoio ao residente.",
+          "• Consulta Documental & Reservas: Acesso ao arquivo digital e aprovação de reservas de espaços comuns."
+        ];
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(51, 65, 85);
+    funcoes.forEach(fn => {
+      doc.text(fn, 18, y);
+      y += 5.5;
+    });
+
+    // Footer
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Documento emitido automaticamente por ${empresaNome} em ${new Date().toLocaleDateString("pt-PT")}. Confidencial.`, 105, 288, { align: "center" });
+
+    doc.save(`Credencial_BoasVindas_${gestor.nome.replace(/\s+/g, "_")}_${gestor.perfil}.pdf`);
+  } catch (err) {
+    console.error("Erro ao gerar PDF de Boas-Vindas do Gestor:", err);
+    alert("Ocorreu um erro ao gerar o PDF de Boas-Vindas.");
+  }
+}
+
 export * from './utils/registerServiceWorker';
 export * from './utils/requestPermission';
 export * from './utils/subscribeUser';
 export * from './utils/loadUserPreferences';
 export * from './utils/saveUserPreferences';
 export * from './utils/sendNotification';
-
 
 
 

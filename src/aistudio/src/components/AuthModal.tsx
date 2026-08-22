@@ -1,5 +1,5 @@
 import React from "react";
-import AuthForm from "../services/authServiceForm";
+import AuthForm from "./AuthForm";
 
 interface AuthModalProps {
   onClose: () => void;
@@ -37,4 +37,3 @@ export default function AuthModal({ onClose, onLoginSuccess, onOpenSecurityLogs 
     </div>
   );
 }
-

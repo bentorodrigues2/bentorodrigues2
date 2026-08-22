@@ -3484,7 +3484,7 @@ export function IAAvancada({ predio, fracoes, avisos, movements, fornecedores, l
                               <div className="bg-slate-950 rounded-xl overflow-hidden border border-slate-800 text-xs font-mono">
                                 {/* Email Top Branding Header */}
                                 <div className="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
-                                  <img src="/marca/02-versao-horizontal.webp" alt="CondoManager AI" className="h-6 object-contain" />
+                                  <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="CondoManager AI" className="h-6 object-contain" />
                                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-950 px-2 py-0.5 rounded border border-slate-800">Email Oficial Gerado</span>
                                 </div>
                                 <div className="bg-slate-900/80 px-4 py-2 border-b border-slate-800/50 space-y-1">
@@ -3498,7 +3498,7 @@ export function IAAvancada({ predio, fracoes, avisos, movements, fornecedores, l
                                 {/* Email Branding Footer */}
                                 <div className="bg-slate-900/60 border-t border-slate-800/60 px-4 py-2 text-center flex items-center justify-between text-[9px] text-slate-500">
                                   <span>Mensagem enviada via CondoManager AI</span>
-                                  <img src="/marca/02-versao-horizontal.webp" alt="" className="h-4 object-contain opacity-70" />
+                                  <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="" className="h-4 object-contain opacity-70" />
                                 </div>
                               </div>
                             )}
@@ -5331,5 +5331,4 @@ export function IAAvancada({ predio, fracoes, avisos, movements, fornecedores, l
     </div>
   );
 }
-
 

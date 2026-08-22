@@ -940,4 +940,3 @@ export function GestaoMovimentos({ predio, contas, movements, setMovements, logg
     </div>
   );
 }
-

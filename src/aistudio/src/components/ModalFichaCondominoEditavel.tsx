@@ -534,4 +534,3 @@ export function ModalFichaCondominoEditavel({
     </div>
   );
 }
-

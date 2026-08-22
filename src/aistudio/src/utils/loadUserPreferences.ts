@@ -44,4 +44,3 @@ export function loadUserPreferences(userId: string = 'user-default'): Notificati
   }
   return getDefaultNotificationPreferences(userId);
 }
-

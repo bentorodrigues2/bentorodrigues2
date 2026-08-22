@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Shield, Lock, Fingerprint, Volume2, VolumeX, Bell, Smartphone, Mail, MessageSquare, Check, ChevronDown, ChevronUp, Play } from "lucide-react";
 import { ActionIcon } from "./ActionIcon";
+import { playNotificationTone } from "../lib/soundService";
+import { createSecurityLog } from "../lib/authSecurity";
 
 interface UserSecuritySubmenuProps {
   userEmail: string;
@@ -10,6 +12,9 @@ interface UserSecuritySubmenuProps {
   setSimulatingScan?: (val: boolean) => void;
   setSimulatingScanProgress?: React.Dispatch<React.SetStateAction<number>>;
   className?: string;
+  defaultOpen?: boolean;
+  isFirstAccessMode?: boolean;
+  onPasswordChangeSuccess?: () => void;
 }
 
 export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
@@ -19,9 +24,12 @@ export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
   setBiometricsEnabled,
   setSimulatingScan,
   setSimulatingScanProgress,
-  className = ""
+  className = "",
+  defaultOpen = false,
+  isFirstAccessMode = false,
+  onPasswordChangeSuccess
 }) => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(defaultOpen || isFirstAccessMode);
 
   // Redefinição de Password
   const [currentPass, setCurrentPass] = useState<string>("");
@@ -47,40 +55,17 @@ export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
   const [notifyMsg, setNotifyMsg] = useState<string | null>(null);
 
   // Play synthetic tone preview for notification sounds
-  const handleTestSound = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      if (selectedNotificationSound.includes("Suave")) {
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
-      } else if (selectedNotificationSound.includes("Cristalino")) {
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.2);
-      } else if (selectedNotificationSound.includes("Sino")) {
-        osc.frequency.setValueAtTime(320, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(640, ctx.currentTime + 0.4);
-      } else if (selectedNotificationSound.includes("Silencioso")) {
-        return;
-      } else {
-        osc.frequency.setValueAtTime(520, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(650, ctx.currentTime + 0.25);
-      }
-
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-    } catch (e) {
-      console.log("AudioContext playback simulation failed or restricted");
+  const handleTestSound = (soundName?: string) => {
+    const tone = soundName || selectedNotificationSound;
+    if (!soundAppEnabled) {
+      alert("O Som da Aplicação está desativado. Ative-o para escutar as notificações.");
+      return;
+    }
+    playNotificationTone(tone, 0.4);
+    if (vibrationEnabled && typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate([100, 50, 100]);
+      } catch (e) {}
     }
   };
 
@@ -92,15 +77,41 @@ export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
       setPassMsg({ type: "error", text: "A nova password deve conter pelo menos 8 caracteres!" });
       return;
     }
+    if (!/[A-Z]/.test(newPass)) {
+      setPassMsg({ type: "error", text: "A password deve conter pelo menos 1 letra maiúscula (A-Z)!" });
+      return;
+    }
+    if (!/[a-z]/.test(newPass)) {
+      setPassMsg({ type: "error", text: "A password deve conter pelo menos 1 letra minúscula (a-z)!" });
+      return;
+    }
+    if (!/[0-9]/.test(newPass)) {
+      setPassMsg({ type: "error", text: "A password deve conter pelo menos 1 dígito numérico (0-9)!" });
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPass)) {
+      setPassMsg({ type: "error", text: "A password deve conter pelo menos 1 símbolo especial (!@#$%...)!" });
+      return;
+    }
     if (newPass !== confirmPass) {
-      setPassMsg({ type: "error", text: "A confirmação da password não coincide!" });
+      setPassMsg({ type: "error", text: "A confirmação da password não coincide com a nova password!" });
       return;
     }
 
-    setPassMsg({ type: "success", text: "Password redefinida com sucesso no perfil!" });
+    createSecurityLog(userEmail, "PASSWORD_RESET_SUCCESS", "Password alterada com sucesso pelo utilizador.");
+    localStorage.removeItem(`provisional_access_${(userEmail || "").toLowerCase()}`);
+    localStorage.setItem(`user_password_set_${(userEmail || "").toLowerCase()}`, "true");
+
+    setPassMsg({ type: "success", text: "✅ Password alterada com sucesso! Critérios de segurança validados." });
     setCurrentPass("");
     setNewPass("");
     setConfirmPass("");
+
+    if (onPasswordChangeSuccess) {
+      setTimeout(() => {
+        onPasswordChangeSuccess();
+      }, 1200);
+    }
   };
 
   const handleToggleBiometrics = () => {
@@ -317,8 +328,8 @@ export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
               </div>
               <button
                 type="button"
-                onClick={handleTestSound}
-                className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-lg font-extrabold flex items-center space-x-1 hover:bg-emerald-100 cursor-pointer"
+                onClick={() => handleTestSound()}
+                className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-lg font-extrabold flex items-center space-x-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 cursor-pointer transition-colors"
               >
                 <Play className="h-2.5 w-2.5" />
                 <span>Testar Som</span>
@@ -329,8 +340,12 @@ export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
               <label className="text-[9px] font-bold text-slate-400 uppercase block">Selecione o Tom de Alerta</label>
               <select
                 value={selectedNotificationSound}
-                onChange={(e) => setSelectedNotificationSound(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-lg text-[10px] font-bold text-slate-800 dark:text-white focus:outline-emerald-500"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedNotificationSound(val);
+                  handleTestSound(val);
+                }}
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-lg text-[10px] font-bold text-slate-800 dark:text-white focus:outline-emerald-500 cursor-pointer"
               >
                 <option value="CondoManager Padronizado">🔔 CondoManager Padronizado (Recomendado)</option>
                 <option value="Melodia Suave">🎵 Melodia Suave (Gentle Chime)</option>
@@ -467,116 +482,6 @@ export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
                 <span>Guardar Preferências de Notificação</span>
               </button>
             </form>
-          </div>
-
-          {/* 6. PREFERÊNCIAS DE NOTIFICAÇÕES WEBPUSH (SUPABASE NOTIFICATION_PREFERENCES) */}
-          <div className="space-y-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-slate-800 dark:text-white font-extrabold text-[11px] uppercase tracking-wider">
-                <Bell className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
-                <span>6. Notificações WebPush (Modelo PWA)</span>
-              </div>
-              <span className="text-[8px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded">
-                Supabase Sync
-              </span>
-            </div>
-
-            <p className="text-[9.5px] text-slate-400 leading-snug">
-              Configuração fina do modelo WebPush no dispositivo. As notificações críticas mantêm-se sempre ativas para garantia de segurança e legalidade.
-            </p>
-
-            {/* Categorias Críticas (Obrigatórias / Padrão True) */}
-            <div className="bg-amber-950/20 border border-amber-500/30 rounded-xl p-3 space-y-2">
-              <div className="flex items-center justify-between text-amber-300 font-extrabold text-[10px]">
-                <span className="flex items-center gap-1.5">
-                  <i className="fa-solid fa-triangle-exclamation text-amber-400"></i>
-                  Notificações Críticas (Sempre Ativas por Padrão)
-                </span>
-                <span className="text-[8px] bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.5 rounded">Obrigatório</span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-1.5 text-[9.5px]">
-                <div className="flex items-center justify-between p-2 bg-slate-950/60 rounded-lg border border-slate-800">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-amber-400 font-bold">🚨 Ocorrências Urgentes</span>
-                    <span className="text-[8px] text-slate-400">(Avarias graves, fugas de água)</span>
-                  </div>
-                  <span className="text-[9px] font-black text-emerald-400 flex items-center gap-1">
-                    <Check className="h-3 w-3" /> Ativo
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-2 bg-slate-950/60 rounded-lg border border-slate-800">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-amber-400 font-bold">🏛️ Assembleias de Condóminos</span>
-                    <span className="text-[8px] text-slate-400">(Convocatórias e atas)</span>
-                  </div>
-                  <span className="text-[9px] font-black text-emerald-400 flex items-center gap-1">
-                    <Check className="h-3 w-3" /> Ativo
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-2 bg-slate-950/60 rounded-lg border border-slate-800">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-amber-400 font-bold">📁 Documentos Importantes</span>
-                    <span className="text-[8px] text-slate-400">(Apólices de seguro, relatórios)</span>
-                  </div>
-                  <span className="text-[9px] font-black text-emerald-400 flex items-center gap-1">
-                    <Check className="h-3 w-3" /> Ativo
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Categorias Opcionais (Padrão False) */}
-            <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2">
-              <span className="text-slate-300 font-extrabold text-[10px] block">
-                ⚙️ Notificações Opcionais (Configuração do Utilizador)
-              </span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[9.5px]">
-                <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-200 block">💰 Finanças & Quotas</span>
-                    <span className="text-[8px] text-slate-400">Alertas de pagamentos e prazos</span>
-                  </div>
-                  <input type="checkbox" defaultChecked={false} className="h-4 w-4 accent-emerald-500 rounded cursor-pointer" />
-                </div>
-
-                <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-200 block">📅 Reservas de Espaços</span>
-                    <span className="text-[8px] text-slate-400">Aprovações de salões e churrasqueiras</span>
-                  </div>
-                  <input type="checkbox" defaultChecked={false} className="h-4 w-4 accent-emerald-500 rounded cursor-pointer" />
-                </div>
-
-                <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-200 block">🧹 Higienização & Limpeza</span>
-                    <span className="text-[8px] text-slate-400">Relatórios e passagens de equipa</span>
-                  </div>
-                  <input type="checkbox" defaultChecked={false} className="h-4 w-4 accent-emerald-500 rounded cursor-pointer" />
-                </div>
-
-                <div className="p-2.5 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-slate-200 block">📢 Avisos Gerais</span>
-                    <span className="text-[8px] text-slate-400">Informações comunitárias de rotina</span>
-                  </div>
-                  <input type="checkbox" defaultChecked={false} className="h-4 w-4 accent-emerald-500 rounded cursor-pointer" />
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => alert("✅ Preferências WebPush sincronizadas com a tabela notification_preferences no Supabase!")}
-              className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-[10px] uppercase tracking-wider transition-all cursor-pointer shadow-md flex items-center justify-center space-x-1.5"
-            >
-              <Check className="h-3.5 w-3.5 text-white" />
-              <span>Sincronizar Tabela notification_preferences</span>
-            </button>
           </div>
 
         </div>

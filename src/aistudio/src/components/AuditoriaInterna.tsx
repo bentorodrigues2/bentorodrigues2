@@ -1369,4 +1369,3 @@ export function AuditoriaInterna({
     </div>
   );
 }
-

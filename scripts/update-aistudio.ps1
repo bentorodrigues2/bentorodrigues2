@@ -1,25 +1,14 @@
-Write-Host "`n=== RESTAURAR AI STUDIO COMPLETO ===`n"
+Write-Host "`n=== ATUALIZAR AI STUDIO (SEM APAGAR) ===`n"
 
-$source = ".\colar aistudio"              # ZIP extraído (completo)
-$target = ".\frontend\src\aistudio"       # Pasta onde o AI Studio vai viver
+$source = ".\colar aistudio"     # Origem: onde TU colas o ZIP
+$target = ".\src\aistudio"       # Destino: AI Studio ativo no site
 
-# 1. APAGAR A PASTA ANTIGA
-if (Test-Path $target) {
-    Remove-Item $target -Recurse -Force
-    Write-Host "Pasta antiga removida."
-}
-
-# 2. CRIAR PASTA NOVA
-New-Item -ItemType Directory -Path $target | Out-Null
-
-# 3. COPIAR O AI STUDIO COMPLETO
-Write-Host "A copiar AI Studio completo..."
+Write-Host "A substituir ficheiros do AI Studio..."
 
 Copy-Item "$source\*" $target -Recurse -Force
 
-Write-Host "`n=== AI STUDIO RESTAURADO COMPLETO ==="
-Write-Host "Layout original preservado."
-Write-Host "Router original preservado."
-Write-Host "App.tsx original preservado."
-Write-Host "Frontend intacto."
-Write-Host "Pronto para integrar em /app/*."
+Write-Host "`n=== AI STUDIO ATUALIZADO ==="
+Write-Host "Sem apagar nada."
+Write-Host "Sem perder alterações."
+Write-Host "Sem duplicações."
+Write-Host "Versão original aplicada com segurança."

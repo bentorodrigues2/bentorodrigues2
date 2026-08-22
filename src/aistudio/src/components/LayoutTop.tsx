@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import AuthModal from "../services/authServiceModal";
+import AuthModal from "./AuthModal";
 import "./LayoutTop.css";
 
 interface LayoutTopProps {
@@ -27,7 +27,7 @@ export default function LayoutTop({ onLoginSuccess }: LayoutTopProps) {
 
       <img src="/skyline.png" alt="Skyline" className="skyline-img" />
 
-      <img src="/logo.png" alt="Logo CondoManager" className="logo-img" />
+      <img src="/marca/02-versao-horizontal.png" alt="Logo CondoManager" className="logo-img" />
 
       <div className="video-frame">
         <video
@@ -49,4 +49,3 @@ export default function LayoutTop({ onLoginSuccess }: LayoutTopProps) {
     </div>
   );
 }
-

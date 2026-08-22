@@ -34,7 +34,7 @@ import { SendingReactionModal } from "./SendingReactionModal";
 import { AuditoriaInterna } from "./AuditoriaInterna";
 import { GestaoFornecedores } from "./GestaoFornecedores";
 import { PortalOrcamentos } from "./PortalOrcamentos";
-import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from "../services/authService";
+import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from "../lib/authSecurity";
 import { createNewSession } from "../lib/sessionManager";
 import { SecurityAuditModal } from "./SecurityAuditModal";
 import { ConfiguracoesAdministracao } from "./ConfiguracoesAdministracao";
@@ -80,6 +80,7 @@ import {
 import { motion } from "motion/react";
 import { formatDatePT, DEMO_ACCOUNTS_MAP, resolveUserByEmail } from "../utils";
 import PWACondominoView from "./PWACondominoView";
+import { DraggableAIFloatingButton } from "./DraggableAIFloatingButton";
 const condoLogo = "/marca/02-versao-horizontal.png";
 const logoutIcon = "/estados-acoes/17-desligar.png";
 const terminarSessaoIcon = "/estados-acoes/16-terminar-sessao.png";
@@ -3726,6 +3727,14 @@ export function PWASimulator({
               );
             })()}
 
+            {/* FLOATING DRAGGABLE AI ASSISTANT FOR ADMIN & GESTOR (MOBILE VIEW) */}
+            <DraggableAIFloatingButton
+              loggedUser={loggedUser}
+              predio={predio}
+              isPWA={true}
+              className="!absolute !bottom-16 !right-3"
+            />
+
           </div>
         </div>
       </div>
@@ -3770,4 +3779,3 @@ export function PWASimulator({
     </div>
   );
 }
-

@@ -1,9 +1,32 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
+import { 
+  X, 
+  Send, 
+  Paperclip, 
+  Smile, 
+  Mic, 
+  Volume2, 
+  Play, 
+  Pause, 
+  FileText, 
+  Camera, 
+  Image as ImageIcon, 
+  Check, 
+  CheckCheck, 
+  Shield, 
+  FileCheck,
+  FileSpreadsheet,
+  AlertTriangle,
+  Cake,
+  Mail,
+  Upload
+} from "lucide-react";
 import { Predio, Fracao, LoggedUser, Aviso, Conta, Movimento } from "../types";
 import { UserSecuritySubmenu } from "./UserSecuritySubmenu";
 import { generateCondominoPwaManualPDF } from "../utils";
 import { triggerSendReaction } from "./SendingReactionModal";
+import { playVoiceNoteSimulation } from "../lib/soundService";
 
 // Inner Interfaces
 export interface MensagemAdministracao {
@@ -149,6 +172,9 @@ export function PortalCondomino({
   const [recordingTimer, setRecordingTimer] = useState(0);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
+  const [msgDocAttachment, setMsgDocAttachment] = useState<{ name: string; size: string } | null>(null);
 
   // Add Payment Modal/State
   const [payAvisoId, setPayAvisoId] = useState<string>("");
@@ -176,6 +202,8 @@ export function PortalCondomino({
   // Refs
   const profileFileRef = useRef<HTMLInputElement>(null);
   const msgFileRef = useRef<HTMLInputElement>(null);
+  const msgDocInputRef = useRef<HTMLInputElement>(null);
+  const msgCameraInputRef = useRef<HTMLInputElement>(null);
   const payFileRef = useRef<HTMLInputElement>(null);
 
   // Sync edited fields with loggedUser
@@ -430,44 +458,51 @@ export function PortalCondomino({
       setPlayingAudioId(null);
     } else {
       setPlayingAudioId(msgId);
-      try {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 1.2);
-      } catch (e) {
-        // Audio playback fallback
-      }
-      setTimeout(() => {
-        setPlayingAudioId(null);
-      }, 4000);
+      playVoiceNoteSimulation(4, () => setPlayingAudioId(null));
     }
+  };
+
+  const handleDocumentAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const sizeStr = (file.size / 1024).toFixed(1) + " KB";
+    setMsgDocAttachment({ name: file.name, size: sizeStr });
+    if (!newMsgTexto) {
+      setNewMsgTexto(`📎 [Documento: ${file.name}]`);
+    }
+  };
+
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    convertToWebP(file, (webpUrl, origSize, webpSize) => {
+      setNewMsgAnexo(webpUrl);
+      setAnexoSizeOriginal(origSize);
+      setAnexoSizeWebP(webpSize);
+      if (!newMsgTexto) {
+        setNewMsgTexto(`📸 [Fotografia da Câmara: ${file.name}]`);
+      }
+    });
   };
 
   // Contact Drawer / WhatsApp Chat submit
   const handleSendMsgToAdmin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!newMsgTexto && !newMsgAnexo && !recordedAudioUrl) {
-      alert("Por favor, escreva uma mensagem, anexe uma fotografia ou grave uma mensagem de voz.");
+    if (!newMsgTexto && !newMsgAnexo && !recordedAudioUrl && !msgDocAttachment) {
+      alert("Por favor, escreva uma mensagem, anexe uma fotografia/documento ou grave uma mensagem de voz.");
       return;
     }
     
     triggerSendReaction("mensagem", "A Enviar Mensagem à Administração...", () => {
       const userFracao = fracoes.find((f) => f.proprietario.email === loggedUser.email);
       const isVoice = !!recordedAudioUrl;
+      const docLabel = msgDocAttachment ? ` 📄 (${msgDocAttachment.name})` : "";
       const novaMsg: MensagemAdministracao = {
         id: "msg-" + Date.now(),
         id_fracao: userFracao?.id_fracao || "frac-1",
         nome_remetente: `${loggedUser.nome} (Fração ${userFracao?.fracao_nome || "A"})`,
-        assunto: newMsgAssunto || (isVoice ? "Mensagem de Voz" : "Mensagem Direta"),
-        mensagem: newMsgTexto || (isVoice ? `🎙️ Nota de voz (${recordingTimer || 4}s)` : "Fotografia anexada"),
+        assunto: newMsgAssunto || (isVoice ? "Mensagem de Voz" : "Mensagem Direta" + docLabel),
+        mensagem: newMsgTexto || (isVoice ? `🎙️ Nota de voz (${recordingTimer || 4}s)` : msgDocAttachment ? `📎 Documento anexo: ${msgDocAttachment.name}` : "Fotografia anexada"),
         data: new Date().toLocaleTimeString("pt-PT", { hour: "2-digit", minute: "2-digit" }),
         anexoWebP: newMsgAnexo,
         audioUrl: recordedAudioUrl,
@@ -479,9 +514,12 @@ export function PortalCondomino({
       setNewMsgAssunto("");
       setNewMsgTexto("");
       setNewMsgAnexo(null);
+      setMsgDocAttachment(null);
       setRecordedAudioUrl(null);
       setIsRecordingAudio(false);
       setRecordingTimer(0);
+      setIsEmojiPickerOpen(false);
+      setIsAttachmentMenuOpen(false);
       setAnexoSizeOriginal("");
       setAnexoSizeWebP("");
     });
@@ -1017,128 +1055,146 @@ export function PortalCondomino({
             </div>
 
             {/* Quotas / Avisos */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-bold uppercase text-slate-800 flex items-center">
-                  <i className="fa-solid fa-file-invoice-dollar mr-2 text-emerald-600"></i> Avisos & Quotas Pendentes
-                </h3>
-                <span className="text-[10px] bg-amber-50 text-amber-700 font-bold border border-amber-200 px-2 py-0.5 rounded-full">
-                  Fração {activeUserFracao?.fracao_nome || "A"}
-                </span>
-              </div>
-
-              {activeUserAvisos.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-xs">
-                  Não possui quotas pendentes neste prédio. Bom trabalho!
+            {loggedUser.role === "INQUILINO" ? (
+              <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-5 text-amber-900 shadow-sm flex items-start gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg shrink-0">
+                  <Shield className="h-5 w-5 text-amber-700" />
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {activeUserAvisos.map((aviso) => (
-                    <div
-                      key={aviso.id_aviso}
-                      className="border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-50/40 hover:bg-slate-50 transition-colors"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-slate-800 text-xs">{aviso.descricao}</span>
-                          <span
-                            className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
-                              aviso.estado === "Pago"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-amber-50 text-amber-700 border border-amber-200"
-                            }`}
-                          >
-                            {aviso.estado}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-4 text-[10px] text-slate-500">
-                          <span>Emissão: {aviso.data}</span>
-                          <span className="text-red-500 font-medium">Vencimento: {aviso.vencimento}</span>
-                        </div>
-                      </div>
-                      <div className="mt-3 md:mt-0 flex items-center space-x-4">
-                        <span className="text-base font-bold text-slate-900 font-mono-custom">
-                          {aviso.valor.toFixed(2)} €
-                        </span>
-                        {aviso.estado !== "Pago" && (
-                          <button
-                            onClick={() => initiatePaymentProof(aviso)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer shadow-sm"
-                          >
-                            <i className="fa-solid fa-upload mr-1.5"></i> Liquidar por IA
-                          </button>
-                        )}
-                        {aviso.estado === "Pago" && (
-                          <span className="text-emerald-600 text-xs font-bold flex items-center">
-                            <i className="fa-solid fa-circle-check mr-1 text-sm"></i> Recibo Gerado
-                          </span>
-                        )}
-                      </div>
+                <div>
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-amber-900 mb-1">
+                    Perfil de Inquilino - Restrição de Dados Financeiros
+                  </h4>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    Como Inquilino, não tem acesso aos extratos de conta-corrente, avisos de cobrança de quotas ou comprovativos financeiros da fração. A gestão financeira e a liquidação de quotas cabem exclusivamente ao proprietário da fração e à administração do condomínio.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-bold uppercase text-slate-800 flex items-center">
+                      <i className="fa-solid fa-file-invoice-dollar mr-2 text-emerald-600"></i> Avisos & Quotas Pendentes
+                    </h3>
+                    <span className="text-[10px] bg-amber-50 text-amber-700 font-bold border border-amber-200 px-2 py-0.5 rounded-full">
+                      Fração {activeUserFracao?.fracao_nome || "A"}
+                    </span>
+                  </div>
+
+                  {activeUserAvisos.length === 0 ? (
+                    <div className="text-center py-6 text-slate-400 text-xs">
+                      Não possui quotas pendentes neste prédio. Bom trabalho!
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Submissions & Receipt History */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-bold uppercase text-slate-800 mb-4 flex items-center">
-                <i className="fa-solid fa-clock-rotate-left mr-2 text-emerald-600"></i> Histórico de Comprovativos & Recibos Emitidos
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase text-[9px] tracking-wider">
-                      <th className="py-2.5">Submissão</th>
-                      <th className="py-2.5">Fração</th>
-                      <th className="py-2.5">Valor Extraído</th>
-                      <th className="py-2.5">IBAN de Envio</th>
-                      <th className="py-2.5">Estado</th>
-                      <th className="py-2.5 text-right">Recibo Oficial</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {comprovativos
-                      .filter((c) => c.id_fracao === activeUserFracao?.id_fracao)
-                      .map((comp) => (
-                        <tr key={comp.id} className="hover:bg-slate-50/50">
-                          <td className="py-3 font-medium text-slate-800">{comp.dataSubmissao}</td>
-                          <td className="py-3 font-bold text-slate-600">Fração {comp.nome_fracao}</td>
-                          <td className="py-3 font-bold text-slate-900 font-mono-custom">{comp.valorExtraido.toFixed(2)} €</td>
-                          <td className="py-3 font-mono-custom text-slate-500 text-[10px]">{comp.ibanExtraido}</td>
-                          <td className="py-3">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                                comp.estado === "Confirmado"
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                                  : comp.estado === "Rejeitado"
-                                  ? "bg-red-50 text-red-700 border border-red-100"
-                                  : "bg-amber-50 text-amber-700 border border-amber-100"
-                              }`}
-                            >
-                              {comp.estado}
-                            </span>
-                          </td>
-                          <td className="py-3 text-right">
-                            {comp.reciboGerado ? (
-                              <button
-                                onClick={() =>
-                                  alert(`--- RECIBO OFICIAL ---\nNúmero: ${comp.reciboGerado}\nFração: ${comp.nome_fracao}\nValor: ${comp.valorExtraido}€\nEstado: Liquidado e Conciliado por IA`)
-                                }
-                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded text-[10px] transition-colors"
+                  ) : (
+                    <div className="space-y-3">
+                      {activeUserAvisos.map((aviso) => (
+                        <div
+                          key={aviso.id_aviso}
+                          className="border border-slate-100 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-50/40 hover:bg-slate-50 transition-colors"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-slate-800 text-xs">{aviso.descricao}</span>
+                              <span
+                                className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                                  aviso.estado === "Pago"
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                                }`}
                               >
-                                <i className="fa-solid fa-file-pdf mr-1 text-red-500"></i> {comp.reciboGerado}
+                                {aviso.estado}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-4 text-[10px] text-slate-500">
+                              <span>Emissão: {aviso.data}</span>
+                              <span className="text-red-500 font-medium">Vencimento: {aviso.vencimento}</span>
+                            </div>
+                          </div>
+                          <div className="mt-3 md:mt-0 flex items-center space-x-4">
+                            <span className="text-base font-bold text-slate-900 font-mono-custom">
+                              {aviso.valor.toFixed(2)} €
+                            </span>
+                            {aviso.estado !== "Pago" && (
+                              <button
+                                onClick={() => initiatePaymentProof(aviso)}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer shadow-sm"
+                              >
+                                <i className="fa-solid fa-upload mr-1.5"></i> Liquidar por IA
                               </button>
-                            ) : (
-                              <span className="text-slate-400 text-[10px]">A aguardar validação</span>
                             )}
-                          </td>
-                        </tr>
+                            {aviso.estado === "Pago" && (
+                              <span className="text-emerald-600 text-xs font-bold flex items-center">
+                                <i className="fa-solid fa-circle-check mr-1 text-sm"></i> Recibo Gerado
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Submissions & Receipt History */}
+                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                  <h3 className="text-sm font-bold uppercase text-slate-800 mb-4 flex items-center">
+                    <i className="fa-solid fa-clock-rotate-left mr-2 text-emerald-600"></i> Histórico de Comprovativos & Recibos Emitidos
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase text-[9px] tracking-wider">
+                          <th className="py-2.5">Submissão</th>
+                          <th className="py-2.5">Fração</th>
+                          <th className="py-2.5">Valor Extraído</th>
+                          <th className="py-2.5">IBAN de Envio</th>
+                          <th className="py-2.5">Estado</th>
+                          <th className="py-2.5 text-right">Recibo Oficial</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {comprovativos
+                          .filter((c) => c.id_fracao === activeUserFracao?.id_fracao)
+                          .map((comp) => (
+                            <tr key={comp.id} className="hover:bg-slate-50/50">
+                              <td className="py-3 font-medium text-slate-800">{comp.dataSubmissao}</td>
+                              <td className="py-3 font-bold text-slate-600">Fração {comp.nome_fracao}</td>
+                              <td className="py-3 font-bold text-slate-900 font-mono-custom">{comp.valorExtraido.toFixed(2)} €</td>
+                              <td className="py-3 font-mono-custom text-slate-500 text-[10px]">{comp.ibanExtraido}</td>
+                              <td className="py-3">
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                                    comp.estado === "Confirmado"
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                      : comp.estado === "Rejeitado"
+                                      ? "bg-red-50 text-red-700 border border-red-100"
+                                      : "bg-amber-50 text-amber-700 border border-amber-100"
+                                  }`}
+                                >
+                                  {comp.estado}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right">
+                                {comp.reciboGerado ? (
+                                  <button
+                                    onClick={() =>
+                                      alert(`--- RECIBO OFICIAL ---\nNúmero: ${comp.reciboGerado}\nFração: ${comp.nome_fracao}\nValor: ${comp.valorExtraido}€\nEstado: Liquidado e Conciliado por IA`)
+                                    }
+                                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded text-[10px] transition-colors"
+                                  >
+                                    <i className="fa-solid fa-file-pdf mr-1 text-red-500"></i> {comp.reciboGerado}
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-400 text-[10px]">A aguardar validação</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Messaging Inbox / Feed inside Portal */}
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
@@ -1445,8 +1501,14 @@ export function PortalCondomino({
 
           {/* WHATSAPP-STYLE DIRECT CHAT MODAL */}
           {msgDrawerOpen && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div 
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setMsgDrawerOpen(false);
+              }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            >
               <motion.div
+                onClick={(e) => e.stopPropagation()}
                 initial={{ opacity: 0, y: 40, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 40, scale: 0.96 }}
@@ -1470,11 +1532,14 @@ export function PortalCondomino({
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
+                      type="button"
                       onClick={() => setMsgDrawerOpen(false)}
-                      className="p-1.5 text-white/80 hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                      title="Fechar"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-full font-black text-xs border border-white/30 transition-all cursor-pointer shadow-md"
+                      title="Sair e Fechar Canal de Mensagens"
+                      aria-label="Sair / Fechar"
                     >
-                      <i className="fa-solid fa-xmark text-lg"></i>
+                      <X className="h-4 w-4 stroke-[2.5]" />
+                      <span>Sair</span>
                     </button>
                   </div>
                 </div>
@@ -1509,9 +1574,9 @@ export function PortalCondomino({
                                   className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs cursor-pointer transition-transform active:scale-90"
                                 >
                                   {playingAudioId === msg.id ? (
-                                    <i className="fa-solid fa-pause text-xs"></i>
+                                    <Pause className="h-3.5 w-3.5 fill-current" />
                                   ) : (
-                                    <i className="fa-solid fa-play text-xs ml-0.5"></i>
+                                    <Play className="h-3.5 w-3.5 fill-current ml-0.5" />
                                   )}
                                 </button>
                                 <div className="flex-grow space-y-1">
@@ -1550,7 +1615,7 @@ export function PortalCondomino({
 
                             <div className="flex items-center justify-end space-x-1 text-[9.5px] text-slate-500 dark:text-emerald-200/70 font-mono-custom">
                               <span>{msg.data}</span>
-                              <i className="fa-solid fa-check-double text-blue-500 text-[10px]"></i>
+                              <CheckCheck className="h-3.5 w-3.5 text-blue-500 inline ml-1" />
                             </div>
                           </div>
                         </div>
@@ -1560,7 +1625,7 @@ export function PortalCondomino({
                           <div className="flex justify-start">
                             <div className="max-w-[85%] bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-xs p-3 shadow-xs border border-slate-200 dark:border-slate-700 space-y-1.5">
                               <div className="text-[10px] font-bold text-[#075E54] dark:text-emerald-400 flex items-center gap-1">
-                                <i className="fa-solid fa-user-shield text-[10px]"></i> Administração do Condomínio
+                                <Shield className="h-3 w-3 text-emerald-600 inline mr-1" /> Administração do Condomínio
                               </div>
                               <p className="text-xs leading-relaxed whitespace-pre-wrap">{msg.respostaAdmin}</p>
                               <div className="text-right text-[9.5px] text-slate-400 font-mono-custom">
@@ -1574,18 +1639,24 @@ export function PortalCondomino({
                   })}
                 </div>
 
-                {/* Previews of attached Photo or Audio Note */}
-                {(newMsgAnexo || recordedAudioUrl) && (
-                  <div className="bg-white dark:bg-slate-850 px-4 py-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                {/* Previews of attached Photo, Document or Audio Note */}
+                {(newMsgAnexo || msgDocAttachment || recordedAudioUrl) && (
+                  <div className="bg-white dark:bg-slate-850 px-4 py-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
                     {newMsgAnexo && (
                       <div className="flex items-center gap-2">
                         <img src={newMsgAnexo} alt="Preview" className="w-10 h-10 object-cover rounded-lg border border-slate-200" />
-                        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Fotografia anexada</span>
+                        <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Fotografia anexada (.webp)</span>
+                      </div>
+                    )}
+                    {msgDocAttachment && (
+                      <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1 rounded-lg">
+                        <FileText className="h-4 w-4 text-indigo-600" />
+                        <span className="text-[11px] font-bold text-indigo-900 dark:text-indigo-200">{msgDocAttachment.name} ({msgDocAttachment.size})</span>
                       </div>
                     )}
                     {recordedAudioUrl && (
                       <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
-                        <i className="fa-solid fa-microphone text-sm"></i>
+                        <Volume2 className="h-4 w-4 text-emerald-600" />
                         <span>Mensagem de voz pronta ({recordingTimer || 4}s)</span>
                       </div>
                     )}
@@ -1593,6 +1664,7 @@ export function PortalCondomino({
                       type="button"
                       onClick={() => {
                         setNewMsgAnexo(null);
+                        setMsgDocAttachment(null);
                         setRecordedAudioUrl(null);
                       }}
                       className="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1 cursor-pointer"
@@ -1601,6 +1673,128 @@ export function PortalCondomino({
                     </button>
                   </div>
                 )}
+
+                {/* EMOJI PICKER POPOVER */}
+                {isEmojiPickerOpen && (
+                  <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-2.5 shadow-2xl z-20 animate-fade-in">
+                    <div className="flex justify-between items-center pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Selecionar Emoji</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEmojiPickerOpen(false)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-8 gap-2 text-lg">
+                      {["😊", "👍", "🏢", "🔑", "🚪", "💡", "🔧", "⚠️", "📄", "💶", "⏱️", "📋", "🤝", "📢", "🚨", "💧", "🛠️", "🚗", "📦", "🧹", "✨", "🔒", "✅", "❌"].map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => {
+                            setNewMsgTexto((prev) => prev + emoji);
+                            setIsEmojiPickerOpen(false);
+                          }}
+                          className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-center cursor-pointer transition-transform hover:scale-125"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ATTACHMENT MENU POPOVER */}
+                {isAttachmentMenuOpen && (
+                  <div className="absolute bottom-16 left-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2.5 rounded-2xl shadow-2xl z-30 animate-fade-in space-y-1.5 min-w-[220px]">
+                    <div className="flex justify-between items-center pb-1 mb-1 border-b border-slate-100 dark:border-slate-800 px-1">
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Anexar Ficheiro</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsAttachmentMenuOpen(false)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAttachmentMenuOpen(false);
+                        msgDocInputRef.current?.click();
+                      }}
+                      className="w-full flex items-center space-x-2.5 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                    >
+                      <div className="p-1.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-xs block">Documento / PDF</span>
+                        <span className="text-[8px] text-slate-400">PDF, Word, Excel, TXT</span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAttachmentMenuOpen(false);
+                        msgCameraInputRef.current?.click();
+                      }}
+                      className="w-full flex items-center space-x-2.5 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                    >
+                      <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                        <Camera className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-xs block">Tirar Fotografia (Câmara)</span>
+                        <span className="text-[8px] text-slate-400">Acesso à câmara do PC/Telemóvel</span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAttachmentMenuOpen(false);
+                        msgFileRef.current?.click();
+                      }}
+                      className="w-full flex items-center space-x-2.5 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                    >
+                      <div className="p-1.5 bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 rounded-lg">
+                        <ImageIcon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-xs block">Galeria de Fotos</span>
+                        <span className="text-[8px] text-slate-400">Compressão .WEBP imediata</span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+
+                {/* Hidden File Inputs */}
+                <input
+                  type="file"
+                  ref={msgFileRef}
+                  onChange={handleMessageAttachmentChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <input
+                  type="file"
+                  ref={msgDocInputRef}
+                  onChange={handleDocumentAttachmentChange}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+                  className="hidden"
+                />
+                <input
+                  type="file"
+                  ref={msgCameraInputRef}
+                  onChange={handleCameraCapture}
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                />
 
                 {/* WhatsApp Chat Footer / Input Bar */}
                 <div className="bg-[#F0F2F5] dark:bg-slate-850 p-2.5 sm:p-3 border-t border-slate-300 dark:border-slate-800 shrink-0">
@@ -1629,22 +1823,39 @@ export function PortalCondomino({
                     </div>
                   ) : (
                     <form onSubmit={handleSendMsgToAdmin} className="flex items-center gap-2">
-                      {/* Attach Photo Button */}
+                      {/* Attach Clip Button */}
                       <button
                         type="button"
-                        onClick={() => msgFileRef.current?.click()}
-                        className="p-2.5 text-slate-500 hover:text-emerald-700 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-full transition-colors cursor-pointer shrink-0"
-                        title="Anexar Fotografia ou Ficheiro"
+                        onClick={() => {
+                          setIsAttachmentMenuOpen(!isAttachmentMenuOpen);
+                          setIsEmojiPickerOpen(false);
+                        }}
+                        className={`p-2.5 rounded-full transition-colors cursor-pointer shrink-0 ${
+                          isAttachmentMenuOpen || newMsgAnexo || msgDocAttachment
+                            ? "bg-emerald-600 text-white"
+                            : "text-slate-500 hover:text-emerald-700 hover:bg-slate-200 dark:hover:bg-slate-750"
+                        }`}
+                        title="Anexar documento, fotografia ou aceder à câmara (Clip)"
                       >
-                        <i className="fa-solid fa-paperclip text-base"></i>
+                        <Paperclip className="h-4 w-4" />
                       </button>
-                      <input
-                        type="file"
-                        ref={msgFileRef}
-                        onChange={handleMessageAttachmentChange}
-                        accept="image/*"
-                        className="hidden"
-                      />
+
+                      {/* Emoji Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEmojiPickerOpen(!isEmojiPickerOpen);
+                          setIsAttachmentMenuOpen(false);
+                        }}
+                        className={`p-2.5 rounded-full transition-colors cursor-pointer shrink-0 ${
+                          isEmojiPickerOpen
+                            ? "bg-amber-500 text-white"
+                            : "text-amber-500 hover:text-amber-600 hover:bg-slate-200 dark:hover:bg-slate-750"
+                        }`}
+                        title="Inserir Emoji"
+                      >
+                        <Smile className="h-4 w-4" />
+                      </button>
 
                       {/* Text Input */}
                       <input
@@ -1660,19 +1871,19 @@ export function PortalCondomino({
                         type="button"
                         onClick={handleToggleVoiceRecording}
                         className="p-2.5 text-slate-500 hover:text-emerald-700 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-full transition-colors cursor-pointer shrink-0"
-                        title="Gravar Mensagem de Áudio"
+                        title="Gravar Mensagem de Áudio (Nota de Voz)"
                       >
-                        <i className="fa-solid fa-microphone text-base"></i>
+                        <Mic className="h-4 w-4" />
                       </button>
 
                       {/* Send Button */}
                       <button
                         type="submit"
-                        disabled={msgSending || (!newMsgTexto && !newMsgAnexo && !recordedAudioUrl)}
-                        className="w-10 h-10 bg-[#075E54] hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-full flex items-center justify-center shrink-0 shadow-sm transition-all cursor-pointer disabled:cursor-not-allowed"
-                        title="Enviar"
+                        disabled={msgSending || (!newMsgTexto && !newMsgAnexo && !recordedAudioUrl && !msgDocAttachment)}
+                        className="w-10 h-10 bg-[#075E54] hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-full flex items-center justify-center shrink-0 shadow-md transition-all cursor-pointer disabled:cursor-not-allowed"
+                        title="Enviar Mensagem"
                       >
-                        <i className="fa-solid fa-paper-plane text-xs"></i>
+                        <Send className="h-4 w-4 text-white" />
                       </button>
                     </form>
                   )}
@@ -1685,15 +1896,27 @@ export function PortalCondomino({
 
       {/* --- PAYMENT PROOF UPLOAD MODAL --- */}
       {payModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPayModalOpen(false);
+          }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
           <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-zoom-in">
             <div className="bg-slate-900 px-6 py-4 text-white flex justify-between items-center">
               <div>
                 <h3 className="font-bold text-sm uppercase tracking-wider text-emerald-400">Liquidação por Inteligência Artificial</h3>
                 <p className="text-[10px] text-slate-300">Carregue o comprovativo e deixe o nosso motor extrair os dados</p>
               </div>
-              <button onClick={() => setPayModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
-                <i className="fa-solid fa-xmark text-lg"></i>
+              <button 
+                type="button"
+                onClick={() => setPayModalOpen(false)} 
+                className="flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-red-600 active:scale-95 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-colors cursor-pointer border border-slate-700 hover:border-red-500"
+                title="Fechar e Sair"
+                aria-label="Fechar"
+              >
+                <X className="h-4 w-4" />
+                <span>Sair</span>
               </button>
             </div>
 
@@ -1799,7 +2022,12 @@ export function PortalCondomino({
       {/* --- BIRTHDAY SIMULATION EMAIL DIALOG --- */}
       {/* --- BIRTHDAY EMAIL SIMULATION DIALOG --- */}
       {birthdayModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setBirthdayModalOpen(false);
+          }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-zoom-in border border-purple-200">
             <div className="bg-purple-950 px-6 py-4 text-white flex justify-between items-center">
               <div className="flex items-center space-x-2">
@@ -1809,8 +2037,15 @@ export function PortalCondomino({
                   <p className="text-[10px] text-purple-200">Envio automatizado com base na data de nascimento</p>
                 </div>
               </div>
-              <button onClick={() => setBirthdayModalOpen(false)} className="text-purple-300 hover:text-white cursor-pointer">
-                <i className="fa-solid fa-xmark text-lg"></i>
+              <button 
+                type="button"
+                onClick={() => setBirthdayModalOpen(false)} 
+                className="flex items-center gap-1 px-2.5 py-1 bg-purple-900/80 hover:bg-red-600 active:scale-95 text-purple-200 hover:text-white rounded-lg text-xs font-bold transition-colors cursor-pointer border border-purple-800"
+                title="Fechar e Sair"
+                aria-label="Fechar"
+              >
+                <X className="h-4 w-4" />
+                <span>Sair</span>
               </button>
             </div>
             <div className="p-6 space-y-4 max-h-[85vh] overflow-y-auto relative">
@@ -1872,7 +2107,12 @@ export function PortalCondomino({
 
       {/* --- WELCOME EMAIL SIMULATION DIALOG --- */}
       {welcomeMailModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setWelcomeMailModal(null);
+          }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-zoom-in border border-emerald-200">
             <div className="bg-slate-900 px-6 py-4 text-white flex justify-between items-center">
               <div className="flex items-center space-x-2">
@@ -1882,8 +2122,15 @@ export function PortalCondomino({
                   <p className="text-[10px] text-slate-300">Instruções de portabilidade para novos condóminos</p>
                 </div>
               </div>
-              <button onClick={() => setWelcomeMailModal(null)} className="text-slate-400 hover:text-white cursor-pointer">
-                <i className="fa-solid fa-xmark text-lg"></i>
+              <button 
+                type="button"
+                onClick={() => setWelcomeMailModal(null)} 
+                className="flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-red-600 active:scale-95 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-colors cursor-pointer border border-slate-700 hover:border-red-500"
+                title="Fechar e Sair"
+                aria-label="Fechar"
+              >
+                <X className="h-4 w-4" />
+                <span>Sair</span>
               </button>
             </div>
             <div className="p-6 space-y-4 max-h-[85vh] overflow-y-auto relative">

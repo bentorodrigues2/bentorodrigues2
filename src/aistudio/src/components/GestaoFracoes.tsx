@@ -284,6 +284,53 @@ export function GestaoFracoes({
     }
   }, [predioFracoes, selectedFracaoId]);
 
+  // Load existing owner data when selectedFracaoId changes or sub-tab is fracoes_proprietario
+  useEffect(() => {
+    if (currentSubTab === "fracoes_proprietario" && selectedFracaoId) {
+      const targetFracao = predioFracoes.find(f => f.id_fracao === selectedFracaoId);
+      if (targetFracao) {
+        if (targetFracao.proprietario) {
+          setPropNome(targetFracao.proprietario.nome || "");
+          setPropNif(targetFracao.proprietario.nif || "");
+          setPropEmail(targetFracao.proprietario.email || "");
+          setPropTlm(targetFracao.proprietario.tlm || "");
+          setPropIban(targetFracao.proprietario.iban || "");
+          setPropTitular(targetFracao.proprietario.titular_conta || targetFracao.proprietario.nome || "");
+          setPropBanco(targetFracao.proprietario.entidade_bancaria || "");
+          setPropMoradaAlt(targetFracao.proprietario.morada_alternativa || "");
+          setPropFoto(targetFracao.proprietario.foto || null);
+        } else {
+          setPropNome("");
+          setPropNif("");
+          setPropEmail("");
+          setPropTlm("");
+          setPropIban("");
+          setPropTitular("");
+          setPropBanco("");
+          setPropMoradaAlt("");
+          setPropFoto(null);
+        }
+        setProprietariosAdicionais(targetFracao.proprietarios_adicionais || []);
+        setArrendada(Boolean(targetFracao.is_arrendada));
+        if (targetFracao.inquilino) {
+          setInqNome(targetFracao.inquilino.nome || "");
+          setInqNif(targetFracao.inquilino.nif || "");
+          setInqEmail(targetFracao.inquilino.email || "");
+          setInqTlm(targetFracao.inquilino.tlm || "");
+          setInqFoto(targetFracao.inquilino.foto || null);
+        } else {
+          setInqNome("");
+          setInqNif("");
+          setInqEmail("");
+          setInqTlm("");
+          setInqFoto(null);
+        }
+        setAdminInterno(targetFracao.administrador_interno || "Não");
+        setNotificacao(targetFracao.notificacao_preferencial || "Digital (E-mail e Mensagens Push)");
+      }
+    }
+  }, [selectedFracaoId, currentSubTab, predioFracoes]);
+
   const processarFotoWebP = (e: React.ChangeEvent<HTMLInputElement>, targetSetter: (val: string | null) => void) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -315,23 +362,25 @@ export function GestaoFracoes({
     reader.readAsDataURL(file);
   };
 
-  const submeterForm = (e: React.FormEvent) => {
+  // Sub-menu 1: Registar Nova Fração (Totalmente Independente)
+  const submeterNovaFracao = (e: React.FormEvent) => {
     e.preventDefault();
     if (loggedUser.role !== 'ADMIN' && loggedUser.role !== 'EMPRESA_GESTORA') {
       return alert("Apenas administradores podem registar frações!");
     }
-    if (!fracaoNome || !piso || !propNome || !propEmail || !propNif) {
-      alert("Preencha todos os campos obrigatórios (*) da Fração e Proprietário.");
+    if (!fracaoNome.trim() || !piso.trim()) {
+      alert("Por favor, indique pelo menos a Fração (Letra/Identificação) e o Piso.");
       return;
     }
 
     const calculatedPermilagem = permilagem ? Number(permilagem) : Math.max(1, 1000 - totalPermilagem);
+    const hasProprietario = Boolean(propNome.trim() && propEmail.trim());
 
     const nova: Fracao = {
-      id_fracao: "frac-" + (fracoes.length + 1),
+      id_fracao: "frac-" + Date.now(),
       id_predio: predio.id_predio,
-      fracao_nome: fracaoNome,
-      piso,
+      fracao_nome: fracaoNome.trim(),
+      piso: piso.trim(),
       permilagem: calculatedPermilagem,
       tipologia,
       tipo_access: tipoAcesso,
@@ -340,23 +389,23 @@ export function GestaoFracoes({
       is_arrendada: arrendada,
       administrador_interno: adminInterno,
       notificacao_preferencial: notificacao,
-      proprietario: {
-        nome: propNome,
-        nif: propNif,
-        email: propEmail,
-        tlm: propTlm,
-        iban: propIban,
-        titular_conta: propTitular,
-        entidade_bancaria: propBanco,
+      proprietario: hasProprietario ? {
+        nome: propNome.trim(),
+        nif: propNif.trim() || "999999990",
+        email: propEmail.trim(),
+        tlm: propTlm.trim() || "—",
+        iban: propIban.trim() || "",
+        titular_conta: propTitular.trim() || propNome.trim(),
+        entidade_bancaria: propBanco.trim() || "",
         morada_alternativa: arrendada ? propMoradaAlt || null : null,
         foto: propFoto
-      },
+      } : null,
       proprietarios_adicionais: proprietariosAdicionais,
-      inquilino: arrendada ? {
-        nome: inqNome,
-        email: inqEmail,
-        tlm: inqTlm,
-        nif: inqNif,
+      inquilino: arrendada && inqNome.trim() ? {
+        nome: inqNome.trim(),
+        email: inqEmail.trim(),
+        tlm: inqTlm.trim(),
+        nif: inqNif.trim(),
         foto: inqFoto
       } : null
     };
@@ -366,12 +415,15 @@ export function GestaoFracoes({
     // Auto-send welcome email if proprietor has email
     if (nova.proprietario?.email) {
       const tempPass = "Cnd-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      localStorage.setItem(`provisional_access_${nova.proprietario.email.toLowerCase()}`, "true");
       try {
         generateCondominoPwaManualPDF(nova.proprietario.nome, predio.nome, tempPass);
       } catch (err) {
         console.warn("Manual PWA PDF generation:", err);
       }
-      alert(`✅ Fração e proprietário criados com sucesso!\n\n📧 E-MAIL DE BOAS-VINDAS ENVIADO AUTOMATICAMENTE:\n• Destinatário: ${nova.proprietario.nome} (${nova.proprietario.email})\n• Password Provisória: ${tempPass}\n• Anexo PDF: Instruções e Manual da PWA Condómino\n• Assinatura: [Assinatura Digital] O Administrador do Condomínio`);
+      alert(`✅ Fração ${nova.fracao_nome} registada com sucesso!\n\n📧 E-MAIL DE BOAS-VINDAS ENVIADO AUTOMATICAMENTE:\n• Destinatário: ${nova.proprietario.nome} (${nova.proprietario.email})\n• Password Provisória: ${tempPass}\n• Anexo PDF: Manual da PWA Condómino\n• Primeiro Acesso: Ao entrar, o condómino será direcionado para alterar a password.`);
+    } else {
+      alert(`✅ Nova Fração ${nova.fracao_nome} (${nova.piso}) registada com sucesso no condomínio!`);
     }
 
     setFracaoNome(""); setPiso(""); setPermilagem(""); setTipologia("Residencial"); setTipoAcesso("Acesso Comum pelas Escadas");
@@ -380,6 +432,67 @@ export function GestaoFracoes({
     setInqNome(""); setInqEmail(""); setInqTlm(""); setInqNif(""); setInqFoto(null);
     setCoNome(""); setCoNif(""); setCoEmail(""); setCoTlm(""); setCoFoto(null);
     setProprietariosAdicionais([]);
+  };
+
+  // Sub-menu 2: Editar / Gravar Dados do Proprietário da Fração Selecionada
+  const submeterEditarProprietario = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loggedUser.role !== 'ADMIN' && loggedUser.role !== 'EMPRESA_GESTORA') {
+      return alert("Apenas administradores podem atualizar proprietários!");
+    }
+    if (!selectedFracaoId) {
+      alert("Por favor, selecione uma fração para associar/editar os proprietários.");
+      return;
+    }
+    if (!propNome.trim() || !propEmail.trim() || !propNif.trim()) {
+      alert("Preencha os campos obrigatórios (*) do Proprietário: Nome, NIF e E-mail.");
+      return;
+    }
+
+    const targetFracao = predioFracoes.find(f => f.id_fracao === selectedFracaoId);
+    if (!targetFracao) return;
+
+    const isNewEmail = targetFracao.proprietario?.email !== propEmail.trim();
+
+    const updatedFracao: Fracao = {
+      ...targetFracao,
+      is_arrendada: arrendada,
+      administrador_interno: adminInterno,
+      notificacao_preferencial: notificacao,
+      proprietario: {
+        nome: propNome.trim(),
+        nif: propNif.trim(),
+        email: propEmail.trim(),
+        tlm: propTlm.trim() || "—",
+        iban: propIban.trim() || "",
+        titular_conta: propTitular.trim() || propNome.trim(),
+        entidade_bancaria: propBanco.trim() || "",
+        morada_alternativa: arrendada ? propMoradaAlt || null : null,
+        foto: propFoto
+      },
+      proprietarios_adicionais: proprietariosAdicionais,
+      inquilino: arrendada && inqNome.trim() ? {
+        nome: inqNome.trim(),
+        email: inqEmail.trim(),
+        tlm: inqTlm.trim(),
+        nif: inqNif.trim(),
+        foto: inqFoto
+      } : null
+    };
+
+    const updatedList = fracoes.map(f => f.id_fracao === selectedFracaoId ? updatedFracao : f);
+    onUpdateFracoes(updatedList);
+
+    if (isNewEmail || !targetFracao.proprietario) {
+      const tempPass = "Cnd-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      localStorage.setItem(`provisional_access_${propEmail.trim().toLowerCase()}`, "true");
+      try {
+        generateCondominoPwaManualPDF(propNome.trim(), predio.nome, tempPass);
+      } catch (err) {}
+      alert(`✅ Dados do proprietário atualizados com sucesso na Fração ${targetFracao.fracao_nome}!\n\n📧 E-MAIL DE BOAS-VINDAS ENVIADO COM CREDENCIAIS PROVISÓRIAS:\n• E-mail: ${propEmail.trim()}\n• Password Provisória: ${tempPass}\n• No primeiro acesso, o menu de segurança será aberto obrigatoriamente para troca de senha.`);
+    } else {
+      alert(`✅ Dados do proprietário da Fração ${targetFracao.fracao_nome} (${propNome.trim()}) gravados com sucesso!`);
+    }
   };
 
   const exportarCondonimosPDF = () => {
@@ -596,7 +709,7 @@ export function GestaoFracoes({
 
       {/* SUB-MENU 1: CADASTRAR FRAÇÃO */}
       {currentSubTab === "fracoes_nova" && (loggedUser.role === 'ADMIN' || loggedUser.role === 'EMPRESA_GESTORA') && (
-        <form onSubmit={submeterForm} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 no-print">
+        <form onSubmit={submeterNovaFracao} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 no-print">
           <h3 className="text-sm font-bold text-slate-800 flex items-center space-x-2">
             <span className="p-1 bg-emerald-50 text-emerald-600 rounded">
               <i className="fa-solid fa-hotel text-xs"></i>
@@ -758,7 +871,7 @@ export function GestaoFracoes({
 
       {/* SUB-MENU 2: CADASTRAR PROPRIETÁRIO */}
       {currentSubTab === "fracoes_proprietario" && (loggedUser.role === 'ADMIN' || loggedUser.role === 'EMPRESA_GESTORA') && (
-        <form onSubmit={submeterForm} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 no-print">
+        <form onSubmit={submeterEditarProprietario} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 no-print">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-sm font-bold text-slate-800 flex items-center space-x-2">
               <span className="p-1 bg-emerald-50 text-emerald-600 rounded">
@@ -1915,4 +2028,3 @@ export function GestaoFracoes({
     </div>
   );
 }
-

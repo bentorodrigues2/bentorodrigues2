@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getSecurityLogs, SecurityLog, getSimulatedClientIp } from "../services/authService";
+import { getSecurityLogs, SecurityLog, getSimulatedClientIp } from "../lib/authSecurity";
 import { getDocumentAccessLogs, DocumentAccessLog, ACL_ROLE_MATRIX } from "../lib/documentSecurity";
 
 interface SecurityAuditModalProps {
@@ -291,5 +291,4 @@ export function SecurityAuditModal({
     </div>
   );
 }
-
 

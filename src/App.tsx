@@ -1,6 +1,8 @@
 ﻿import { useState, useEffect } from "react";
 import LayoutTop from "./components/LayoutTop";
-import AuthForm from "./components/AuthForm";
+
+// CORREÇÃO: usar o PortalAutenticacao ORIGINAL do AI Studio
+import PortalAutenticacao from "./aistudio/src/components/PortalAutenticacao";
 
 export default function App() {
 
@@ -24,6 +26,8 @@ export default function App() {
     const cleanEmail = (emailInput || browserEmail).trim().toLowerCase();
     setBrowserEmail(cleanEmail);
     setBrowserIsLoggedOut(false);
+
+    // Rota após login
     setCurrentRoute("/dashboard");
     window.history.pushState({}, "", "/dashboard");
   };
@@ -46,8 +50,8 @@ export default function App() {
       return <LayoutTop onLoginSuccess={handleLoginFromTop} />;
     }
     return (
-      <div className={\h-screen w-screen flex items-center justify-center p-4 \\}>
-        <AuthForm
+      <div className="h-screen w-screen flex items-center justify-center p-4">
+        <PortalAutenticacao
           initialEmail={browserEmail}
           initialErrorMessage={loginErrorMessage}
           onLoginSuccess={handleLoginFromTop}
@@ -58,7 +62,7 @@ export default function App() {
 
   // DASHBOARD SIMPLES (placeholder)
   return (
-    <div className={\h-screen w-screen flex items-center justify-center \\}>
+    <div className="h-screen w-screen flex items-center justify-center">
       <h1 className="text-3xl font-bold">Dashboard</h1>
     </div>
   );

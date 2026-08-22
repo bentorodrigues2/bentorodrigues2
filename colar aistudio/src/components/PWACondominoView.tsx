@@ -15,6 +15,8 @@ import {
 import { generateAndDownloadPdf, downloadEmailDocument, exportToXLS, downloadBlob } from "../utils";
 import { GestaoDocumentos } from "./GestaoDocumentos";
 import { UserSecuritySubmenu } from "./UserSecuritySubmenu";
+import { DraggableAIFloatingButton } from "./DraggableAIFloatingButton";
+import { playVoiceNoteSimulation } from "../lib/soundService";
 import { 
   Smartphone, 
   User, 
@@ -53,7 +55,14 @@ import {
   ThumbsUp,
   Star,
   RefreshCw,
-  Lock
+  Lock,
+  Paperclip,
+  Smile,
+  File,
+  Image,
+  Play,
+  Pause,
+  X
 } from "lucide-react";
 
 interface PWACondominoViewProps {
@@ -109,11 +118,16 @@ export default function PWACondominoView({
   const [selectedSubmenu, setSelectedSubmenu] = useState<string | null>(null);
   const [activePwaModal, setActivePwaModal] = useState<string | null>(null);
 
-  // Audio recording & photo capture states for chat
+  // Audio recording, attachments & emojis states for chat
   const [isRecordingChatAudio, setIsRecordingChatAudio] = useState(false);
   const [chatAudioTimer, setChatAudioTimer] = useState(0);
   const [chatAudioData, setChatAudioData] = useState<string | null>(null);
   const [chatPhotoWebp, setChatPhotoWebp] = useState<string | null>(null);
+  const [chatPhotoName, setChatPhotoName] = useState<string | null>(null);
+  const [chatDocAttachment, setChatDocAttachment] = useState<{ name: string; size: string } | null>(null);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isAttachmentMenuOpen, setIsAttachmentMenuOpen] = useState(false);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
 
   useEffect(() => {
     let interval: any = null;
@@ -584,7 +598,7 @@ export default function PWACondominoView({
                   { id: "fornecedores", label: "Fornecedores", desc: "Prestadores Ativos", image: "/modulos/67-fornecedor.png" },
                   { id: "sondagens", label: "Sondagens", desc: "Decisões e Votos", image: "/modulos/70-pessoa-de-contacto.png" },
                   { id: "obras", label: "Obras", desc: "Melhorias Prédio", image: "/modulos/41-obra.png" }
-                ].map(card => {
+                ].filter(card => !(loggedUser.role === "INQUILINO" && card.id === "financas")).map(card => {
                   const notifCount = getNotificationCount(card.id);
                   return (
                     <button
@@ -1843,6 +1857,392 @@ export default function PWACondominoView({
         )}
 
         {/* ========================================== */}
+        {/* MÓDULO 8 — MENSAGENS E CHAT COM A ADMINISTRAÇÃO */}
+        {/* ========================================== */}
+        {activeTab === "mensagens" && (
+          <div className="space-y-4 animate-fade-in" id="pwa-modulo-mensagens">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-black tracking-tight text-slate-800 dark:text-white">💬 Mensagens & Atendimento</h3>
+                <span className="text-[9px] text-slate-400">Canal direto com a administração e piquete</span>
+              </div>
+              <span className="text-[8.5px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 font-extrabold px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                Online
+              </span>
+            </div>
+
+            {/* Quick Contact Cards */}
+            <div className="grid grid-cols-2 gap-2 text-[9px]">
+              <button 
+                type="button"
+                onClick={() => setActivePwaModal("contactos_emergencia")}
+                className="p-2.5 bg-red-50/60 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-left hover:border-red-400 cursor-pointer transition-all space-y-0.5"
+              >
+                <span className="font-black text-red-600 dark:text-red-400 block uppercase tracking-wider text-[8px]">🚨 Piquete Urgente</span>
+                <p className="text-slate-600 dark:text-slate-300 font-bold">24h Assistência Técnica</p>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => {
+                  setNewMsgText("Assunto: Pedido de esclarecimento sobre a ata da última assembleia.");
+                }}
+                className="p-2.5 bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/40 rounded-xl text-left hover:border-indigo-400 cursor-pointer transition-all space-y-0.5"
+              >
+                <span className="font-black text-indigo-600 dark:text-indigo-400 block uppercase tracking-wider text-[8px]">📋 Modelo Rápido</span>
+                <p className="text-slate-600 dark:text-slate-300 font-bold">Pedir Esclarecimento</p>
+              </button>
+            </div>
+
+            {/* Main Chat Box Container */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-3.5 shadow-sm space-y-3 relative">
+              <div className="h-64 bg-slate-50 dark:bg-slate-950/70 border border-slate-150 dark:border-slate-850 rounded-2xl p-3 space-y-2.5 overflow-y-auto">
+                {/* Admin Message */}
+                <div className="p-2.5 bg-white dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-750 space-y-1 max-w-[85%] shadow-xs">
+                  <div className="flex justify-between font-bold text-slate-400 text-[8px]">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">🏢 Administração do Condomínio</span>
+                    <span>Hoje 16:15</span>
+                  </div>
+                  <p className="text-slate-700 dark:text-slate-200 leading-normal text-[10px]">
+                    Boa tarde Sr. João, informamos que a equipa de vistorias já reportou a anomalia na porta do ginásio. O fornecedor técnico foi adjudicado para verificação esta quarta-feira.
+                  </p>
+                </div>
+
+                {/* Resident Message */}
+                <div className="p-2.5 bg-emerald-600 text-white rounded-2xl space-y-1 ml-auto max-w-[85%] shadow-xs">
+                  <div className="flex justify-between font-bold text-emerald-100 text-[8px] flex-row-reverse">
+                    <span>Você (3ºE)</span>
+                    <span>Hoje 14:10</span>
+                  </div>
+                  <p className="text-white leading-normal text-[10px]">
+                    Detetei que a porta do ginásio no piso -1 não está a fechar corretamente após as limpezas. Podem mandar verificar?
+                  </p>
+                </div>
+
+                {/* Dynamic messages */}
+                {customMessages.map((msg, idx) => {
+                  const isAudio = typeof msg === "string" && msg.includes("[Nota de voz");
+                  const isPhoto = typeof msg === "string" && msg.includes("[Fotografia");
+                  const isDoc = typeof msg === "string" && msg.includes("[Documento");
+                  const msgId = `tab-msg-${idx}`;
+                  const isPlaying = playingAudioId === msgId;
+
+                  return (
+                    <div key={idx} className="p-2.5 bg-emerald-600 text-white rounded-2xl space-y-1 ml-auto max-w-[88%] shadow-xs animate-fade-in">
+                      <div className="flex justify-between font-bold text-emerald-100 text-[8px] flex-row-reverse">
+                        <span>Você (3ºE)</span>
+                        <span>Agora</span>
+                      </div>
+
+                      {isAudio ? (
+                        <div className="flex items-center justify-end space-x-2 bg-emerald-700/80 p-2 rounded-xl text-left">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isPlaying) {
+                                setPlayingAudioId(null);
+                              } else {
+                                setPlayingAudioId(msgId);
+                                playVoiceNoteSimulation(4, () => setPlayingAudioId(null));
+                              }
+                            }}
+                            className="h-7 w-7 rounded-full bg-white text-emerald-700 flex items-center justify-center cursor-pointer transition-transform active:scale-95 shrink-0 shadow-sm"
+                            title={isPlaying ? "Pausar" : "Ouvir Nota de Voz"}
+                          >
+                            {isPlaying ? <Pause className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5 fill-current ml-0.5" />}
+                          </button>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center space-x-0.5">
+                              {[30, 70, 45, 90, 60, 40, 85, 50, 75, 35, 65, 80, 55, 45].map((h, i) => (
+                                <span
+                                  key={i}
+                                  className={`w-1 rounded-full transition-all duration-300 ${
+                                    isPlaying ? "bg-white animate-pulse" : "bg-emerald-300"
+                                  }`}
+                                  style={{ height: `${Math.max(4, h * 0.16)}px` }}
+                                />
+                              ))}
+                            </div>
+                            <div className="flex justify-between text-[7.5px] font-mono text-emerald-100">
+                              <span>{isPlaying ? "A reproduzir áudio..." : "Nota de voz"}</span>
+                              <span>0:04</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : isPhoto ? (
+                        <div className="space-y-1 text-left">
+                          <div className="bg-emerald-700/60 p-1.5 rounded-xl overflow-hidden flex items-center justify-center max-h-36">
+                            <img 
+                              src="/estados-acoes/04-guardar.png" 
+                              alt="Fotografia Anexada" 
+                              className="max-h-28 object-contain rounded-lg"
+                            />
+                          </div>
+                          <span className="text-[8.5px] text-emerald-100 font-bold block text-right">{msg}</span>
+                        </div>
+                      ) : isDoc ? (
+                        <div className="bg-emerald-700/80 p-2 rounded-xl flex items-center space-x-2 text-left">
+                          <File className="h-4 w-4 text-white shrink-0" />
+                          <div className="truncate flex-1">
+                            <span className="text-[9px] font-bold text-white block truncate">{msg.replace("📎 ", "")}</span>
+                            <span className="text-[7.5px] text-emerald-200">Documento PDF/Anexo verificado</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-white leading-normal text-[10px]">{msg}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Previews of attached items */}
+              {(chatPhotoWebp || chatAudioData || chatDocAttachment) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {chatPhotoWebp && (
+                    <div className="bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 px-2 py-1 rounded-xl text-[9px] flex items-center gap-1.5 text-emerald-700 dark:text-emerald-200 shadow-xs">
+                      <Camera className="h-3 w-3 text-emerald-500" />
+                      <span className="font-bold truncate max-w-[120px]">{chatPhotoName || "Foto_Camara.webp"}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => { setChatPhotoWebp(null); setChatPhotoName(null); }} 
+                        className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {chatDocAttachment && (
+                    <div className="bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-300 dark:border-indigo-700 px-2 py-1 rounded-xl text-[9px] flex items-center gap-1.5 text-indigo-700 dark:text-indigo-200 shadow-xs">
+                      <File className="h-3 w-3 text-indigo-500" />
+                      <span className="font-bold truncate max-w-[120px]">{chatDocAttachment.name} ({chatDocAttachment.size})</span>
+                      <button 
+                        type="button" 
+                        onClick={() => setChatDocAttachment(null)} 
+                        className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {chatAudioData && (
+                    <div className="bg-amber-50 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 px-2 py-1 rounded-xl text-[9px] flex items-center gap-1.5 text-amber-700 dark:text-amber-200 shadow-xs">
+                      <Volume2 className="h-3 w-3 text-amber-500" />
+                      <span className="font-bold">Gravação de Voz ({chatAudioTimer || 4}s)</span>
+                      <button 
+                        type="button" 
+                        onClick={() => { setChatAudioData(null); setChatAudioTimer(0); }} 
+                        className="text-red-500 hover:text-red-700 font-bold ml-1 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* EMOJI PICKER POPOVER FOR TAB */}
+              {isEmojiPickerOpen && (
+                <div className="absolute bottom-16 left-3 right-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2.5 rounded-2xl shadow-2xl z-50 animate-fade-in">
+                  <div className="flex justify-between items-center pb-1.5 mb-1.5 border-b border-slate-100 dark:border-slate-800">
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Selecionar Emoji</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsEmojiPickerOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-8 gap-1.5 text-base">
+                    {["😊", "👍", "🏢", "🔑", "🚪", "💡", "🔧", "⚠️", "📄", "💶", "⏱️", "📋", "🤝", "📢", "🚨", "💧", "🛠️", "🚗", "📦", "🧹", "✨", "🔒", "✅", "❌"].map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          setNewMsgText(newMsgText + emoji);
+                          setIsEmojiPickerOpen(false);
+                        }}
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-center cursor-pointer transition-transform hover:scale-125"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ATTACHMENT MENU POPOVER FOR TAB */}
+              {isAttachmentMenuOpen && (
+                <div className="absolute bottom-16 left-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2 rounded-2xl shadow-2xl z-50 animate-fade-in space-y-1 min-w-[200px]">
+                  <div className="flex justify-between items-center pb-1 mb-1 border-b border-slate-100 dark:border-slate-800 px-1">
+                    <span className="text-[8.5px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Anexar Ficheiro</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsAttachmentMenuOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAttachmentMenuOpen(false);
+                      document.getElementById("pwa-chat-doc-input")?.click();
+                    }}
+                    className="w-full flex items-center space-x-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                  >
+                    <div className="p-1 bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                      <File className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[9.5px] block">Documento / PDF</span>
+                      <span className="text-[7.5px] text-slate-400">PDF, Word, Excel, TXT</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAttachmentMenuOpen(false);
+                      document.getElementById("pwa-chat-camera-input")?.click();
+                    }}
+                    className="w-full flex items-center space-x-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                  >
+                    <div className="p-1 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                      <Camera className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[9.5px] block">Tirar Fotografia (Câmara)</span>
+                      <span className="text-[7.5px] text-slate-400">Acesso à câmara móvel/PC</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAttachmentMenuOpen(false);
+                      document.getElementById("pwa-chat-photo-input")?.click();
+                    }}
+                    className="w-full flex items-center space-x-2 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                  >
+                    <div className="p-1 bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 rounded-lg">
+                      <Image className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-[9.5px] block">Galeria de Fotos</span>
+                      <span className="text-[7.5px] text-slate-400">Compressão .WEBP imediata</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {/* Chat Input Form */}
+              <form 
+                onSubmit={(e) => { 
+                  if (chatAudioData && !newMsgText) {
+                    setNewMsgText(`🎙️ [Nota de voz de ${chatAudioTimer || 4}s]`);
+                  }
+                  handleEnviarMensagem(e);
+                  setChatAudioData(null);
+                  setChatPhotoWebp(null);
+                  setChatPhotoName(null);
+                  setChatDocAttachment(null);
+                  setIsEmojiPickerOpen(false);
+                  setIsAttachmentMenuOpen(false);
+                }} 
+                className="flex items-center gap-1.5 pt-2 border-t border-slate-150 dark:border-slate-800"
+              >
+                {/* CLIP BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAttachmentMenuOpen(!isAttachmentMenuOpen);
+                    setIsEmojiPickerOpen(false);
+                  }}
+                  className={`p-2 rounded-xl cursor-pointer transition-colors shrink-0 ${
+                    isAttachmentMenuOpen || chatPhotoWebp || chatDocAttachment
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                  }`}
+                  title="Anexar documento, fotografia ou aceder à câmara (Clip)"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </button>
+
+                {/* EMOJI BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEmojiPickerOpen(!isEmojiPickerOpen);
+                    setIsAttachmentMenuOpen(false);
+                  }}
+                  className={`p-2 rounded-xl cursor-pointer transition-colors shrink-0 ${
+                    isEmojiPickerOpen
+                      ? "bg-amber-500 text-white shadow-xs"
+                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-amber-500"
+                  }`}
+                  title="Inserir Emoji"
+                >
+                  <Smile className="h-4 w-4" />
+                </button>
+
+                {/* MIC AUDIO VOICE NOTE RECORDER */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isRecordingChatAudio) {
+                      setIsRecordingChatAudio(false);
+                      setChatAudioData("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=");
+                      if (!newMsgText) setNewMsgText(`🎙️ [Nota de voz de ${chatAudioTimer || 4}s]`);
+                    } else {
+                      setIsRecordingChatAudio(true);
+                      setChatAudioTimer(0);
+                    }
+                  }}
+                  className={`p-2 ${
+                    isRecordingChatAudio 
+                      ? "bg-red-600 text-white animate-pulse" 
+                      : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-600 dark:text-emerald-400"
+                  } rounded-xl cursor-pointer transition-colors shrink-0`}
+                  title={isRecordingChatAudio ? "Parar gravação de voz" : "Gravar mensagem de áudio (Nota de Voz)"}
+                >
+                  <Mic className="h-4 w-4" />
+                </button>
+
+                {/* TEXT INPUT */}
+                <input 
+                  type="text" 
+                  required={!chatAudioData && !chatPhotoWebp && !chatDocAttachment}
+                  value={newMsgText}
+                  onChange={e => setNewMsgText(e.target.value)}
+                  placeholder={
+                    isRecordingChatAudio 
+                      ? `🔴 A gravar áudio (${chatAudioTimer}s)... clique no microfone para parar` 
+                      : "Escreva ao gestor do prédio..."
+                  }
+                  className="flex-grow bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 py-2 text-xs rounded-xl focus:outline-none focus:border-emerald-500 text-slate-800 dark:text-white font-medium"
+                />
+
+                {/* ENVIAR MENSAGEM BUTTON */}
+                <button 
+                  type="submit" 
+                  className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl cursor-pointer transition-all active:scale-95 shadow-md flex items-center justify-center shrink-0"
+                  title="Enviar Mensagem"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================== */}
         {/* MÓDULO 10 — PERFIL DO CONDÓMINO */}
         {/* ========================================== */}
         {activeTab === "perfil" && (
@@ -2357,16 +2757,22 @@ export default function PWACondominoView({
 
         {/* SECONDARY ACTION POPUPS BASED ON THE PWA SUBMENU SELECTION (PREVENT SCROLLING) */}
         {activePwaModal && (
-          <div className="fixed inset-0 bg-slate-950/80 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+          <div 
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setActivePwaModal(null);
+            }}
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-[100] flex items-center justify-center p-4 overflow-y-auto"
+          >
             <motion.div
+              onClick={(e) => e.stopPropagation()}
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               className="bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden text-[11px]" style={{ backgroundColor: "#ffffff" }}
             >
               {/* Header */}
-              <div className="bg-slate-100 p-4 border-b border-slate-200 flex justify-between items-center shrink-0">
-                <span className="font-black uppercase tracking-wider text-emerald-600 text-[10px] flex items-center gap-1.5">
+              <div className="bg-slate-100 p-3.5 border-b border-slate-200 flex justify-between items-center shrink-0">
+                <span className="font-black uppercase tracking-wider text-emerald-600 text-[10px] flex items-center gap-1.5 truncate max-w-[210px]">
                   {activePwaModal === "reportar_avaria" && "🚨 Reportar Ocorrência"}
                   {activePwaModal === "ver_intervencoes" && "🔧 Intervenções Ativas"}
                   {activePwaModal === "enviar_comprovativo" && "📄 Submissão de Comprovativo"}
@@ -2384,10 +2790,14 @@ export default function PWACondominoView({
                   {activePwaModal === "plano_plurianual" && "📅 Plano Plurianual (2026-2030)"}
                 </span>
                 <button
+                  type="button"
                   onClick={() => setActivePwaModal(null)}
-                  className="text-slate-400 hover:text-white font-black text-xs p-1 cursor-pointer transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black text-xs rounded-lg transition-all cursor-pointer shadow-sm border border-red-500 shrink-0"
+                  title="Sair / Fechar Modal"
+                  aria-label="Sair / Fechar"
                 >
-                  Fechar ✕
+                  <X className="h-3.5 w-3.5 stroke-[2.5]" />
+                  <span>Sair</span>
                 </button>
               </div>
 
@@ -2624,63 +3034,317 @@ export default function PWACondominoView({
                 )}
 
                 {activePwaModal === "chat_admin" && (
-                  <div className="space-y-3 text-[10px] flex flex-col h-[50vh]">
-                    <p className="text-slate-300 shrink-0">Comunique diretamente com a administração do seu prédio em tempo real.</p>
+                  <div className="space-y-3 text-[10px] flex flex-col h-[52vh] relative">
+                    <div className="flex justify-between items-center shrink-0">
+                      <p className="text-slate-300">Comunique diretamente com a administração em tempo real.</p>
+                      <span className="text-[8px] bg-emerald-500/20 text-emerald-300 font-extrabold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                        Admin Online
+                      </span>
+                    </div>
                     
-                    <div className="flex-grow bg-slate-950/30 border border-slate-800 rounded-xl p-3 space-y-2.5 overflow-y-auto min-h-[150px]">
-                      <div className="p-2 bg-slate-800/80 rounded-lg border border-slate-750 space-y-1">
+                    <div className="flex-grow bg-slate-950/40 border border-slate-800 rounded-2xl p-3 space-y-2.5 overflow-y-auto min-h-[160px]">
+                      {/* Admin greeting */}
+                      <div className="p-2.5 bg-slate-850 rounded-2xl border border-slate-800 space-y-1 max-w-[85%]">
                         <div className="flex justify-between font-bold text-slate-400 text-[8px]">
-                          <span>Administração</span>
+                          <span className="text-emerald-400 font-extrabold">🏢 Administração do Prédio</span>
                           <span>Hoje 16:15</span>
                         </div>
                         <p className="text-slate-200 leading-normal">
-                          "Boa tarde Sr. João, informamos que a equipa de vistorias já reportou a anomalia na porta do ginásio. O fornecedor técnico foi adjudicado para verificação esta quarta-feira."
+                          Boa tarde Sr. João, informamos que a equipa de vistorias já reportou a anomalia na porta do ginásio. O técnico foi adjudicado para verificação esta quarta-feira.
                         </p>
                       </div>
 
-                      <div className="p-2 bg-emerald-950/20 rounded-lg border border-emerald-900/20 text-right space-y-1">
+                      {/* User sample message */}
+                      <div className="p-2.5 bg-emerald-950/30 rounded-2xl border border-emerald-800/40 text-right space-y-1 ml-auto max-w-[85%]">
                         <div className="flex justify-between font-bold text-emerald-400 text-[8px] flex-row-reverse">
-                          <span>Você (3ºE)</span>
+                          <span className="font-extrabold">Você (3ºE)</span>
                           <span>Hoje 14:10</span>
                         </div>
-                        <p className="text-slate-250 leading-normal italic">
-                          "Detetei que a porta do ginásio no piso -1 não está a fechar corretamente após as limpezas. Podem mandar verificar?"
+                        <p className="text-slate-200 leading-normal">
+                          Detetei que a porta do ginásio no piso -1 não está a fechar corretamente após as limpezas. Podem mandar verificar?
                         </p>
                       </div>
 
-                      {customMessages.map((msg, idx) => (
-                        <div key={idx} className="p-2 bg-emerald-950/20 rounded-lg border border-emerald-900/20 text-right space-y-1">
-                          <div className="flex justify-between font-bold text-emerald-400 text-[8px] flex-row-reverse">
-                            <span>Você (3ºE)</span>
-                            <span>Agora</span>
+                      {/* Dynamic Custom Messages */}
+                      {customMessages.map((msg, idx) => {
+                        const isAudio = typeof msg === "string" && msg.includes("[Nota de voz");
+                        const isPhoto = typeof msg === "string" && msg.includes("[Fotografia");
+                        const isDoc = typeof msg === "string" && msg.includes("[Documento");
+                        const msgId = `msg-${idx}`;
+                        const isPlaying = playingAudioId === msgId;
+
+                        return (
+                          <div key={idx} className="p-2.5 bg-emerald-950/30 rounded-2xl border border-emerald-800/40 text-right space-y-1.5 ml-auto max-w-[88%] animate-fade-in">
+                            <div className="flex justify-between font-bold text-emerald-400 text-[8px] flex-row-reverse">
+                              <span className="font-extrabold">Você (3ºE)</span>
+                              <span>Agora</span>
+                            </div>
+
+                            {/* Voice Note Player Bubble */}
+                            {isAudio ? (
+                              <div className="flex items-center justify-end space-x-2 bg-slate-900/80 p-2 rounded-xl border border-emerald-800/40 text-left">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isPlaying) {
+                                      setPlayingAudioId(null);
+                                    } else {
+                                      setPlayingAudioId(msgId);
+                                      playVoiceNoteSimulation(4, () => setPlayingAudioId(null));
+                                    }
+                                  }}
+                                  className="h-7 w-7 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center cursor-pointer transition-transform active:scale-95 shrink-0"
+                                  title={isPlaying ? "Pausar" : "Ouvir Nota de Voz"}
+                                >
+                                  {isPlaying ? <Pause className="h-3.5 w-3.5 fill-current" /> : <Play className="h-3.5 w-3.5 fill-current ml-0.5" />}
+                                </button>
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex items-center space-x-0.5">
+                                    {[30, 70, 45, 90, 60, 40, 85, 50, 75, 35, 65, 80, 55, 45].map((h, i) => (
+                                      <span
+                                        key={i}
+                                        className={`w-1 rounded-full transition-all duration-300 ${
+                                          isPlaying ? "bg-emerald-400 animate-pulse" : "bg-slate-600"
+                                        }`}
+                                        style={{ height: `${Math.max(4, h * 0.16)}px` }}
+                                      />
+                                    ))}
+                                  </div>
+                                  <div className="flex justify-between text-[7.5px] font-mono text-slate-400">
+                                    <span>{isPlaying ? "A reproduzir áudio..." : "Nota de voz"}</span>
+                                    <span>0:04</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : isPhoto ? (
+                              <div className="space-y-1 text-left">
+                                <div className="bg-slate-900 p-1.5 rounded-xl border border-slate-700 overflow-hidden flex items-center justify-center max-h-36">
+                                  <img 
+                                    src="/estados-acoes/04-guardar.png" 
+                                    alt="Fotografia Anexada" 
+                                    className="max-h-28 object-contain rounded-lg"
+                                  />
+                                </div>
+                                <span className="text-[8.5px] text-emerald-300 font-bold block text-right">{msg}</span>
+                              </div>
+                            ) : isDoc ? (
+                              <div className="bg-slate-900/90 p-2 rounded-xl border border-slate-700 flex items-center space-x-2 text-left">
+                                <File className="h-4 w-4 text-emerald-400 shrink-0" />
+                                <div className="truncate flex-1">
+                                  <span className="text-[9px] font-bold text-white block truncate">{msg.replace("📎 ", "")}</span>
+                                  <span className="text-[7.5px] text-slate-400">Documento PDF/Anexo verificado</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-slate-200 leading-normal">{msg}</p>
+                            )}
                           </div>
-                          <p className="text-slate-250 leading-normal italic">
-                            "{msg}"
-                          </p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
-                    {/* Previews of attached Photo (WebP) or Audio Voice Note */}
-                    {(chatPhotoWebp || chatAudioData) && (
-                      <div className="flex items-center gap-2 px-1">
+                    {/* Previews of attached Photo (WebP), Document or Audio Voice Note */}
+                    {(chatPhotoWebp || chatAudioData || chatDocAttachment) && (
+                      <div className="flex flex-wrap items-center gap-2 px-1">
                         {chatPhotoWebp && (
-                          <div className="bg-emerald-950/80 border border-emerald-700/60 p-1.5 rounded-lg text-[9px] flex items-center gap-1.5 text-emerald-200">
+                          <div className="bg-emerald-950/90 border border-emerald-500/50 px-2 py-1 rounded-xl text-[9px] flex items-center gap-1.5 text-emerald-200 shadow-sm animate-fade-in">
                             <Camera className="h-3 w-3 text-emerald-400" />
-                            <span className="font-bold">Foto WebP Anexada</span>
-                            <button type="button" onClick={() => setChatPhotoWebp(null)} className="text-red-400 hover:text-red-300 font-bold ml-1">✕</button>
+                            <span className="font-bold truncate max-w-[120px]">{chatPhotoName || "Foto_Camara.webp"}</span>
+                            <button 
+                              type="button" 
+                              onClick={() => { setChatPhotoWebp(null); setChatPhotoName(null); }} 
+                              className="text-red-400 hover:text-red-300 font-bold ml-1 cursor-pointer"
+                              title="Remover fotografia"
+                            >
+                              ✕
+                            </button>
                           </div>
                         )}
+
+                        {chatDocAttachment && (
+                          <div className="bg-indigo-950/90 border border-indigo-500/50 px-2 py-1 rounded-xl text-[9px] flex items-center gap-1.5 text-indigo-200 shadow-sm animate-fade-in">
+                            <File className="h-3 w-3 text-indigo-400" />
+                            <span className="font-bold truncate max-w-[120px]">{chatDocAttachment.name} ({chatDocAttachment.size})</span>
+                            <button 
+                              type="button" 
+                              onClick={() => setChatDocAttachment(null)} 
+                              className="text-red-400 hover:text-red-300 font-bold ml-1 cursor-pointer"
+                              title="Remover anexo"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+
                         {chatAudioData && (
-                          <div className="bg-amber-950/80 border border-amber-700/60 p-1.5 rounded-lg text-[9px] flex items-center gap-1.5 text-amber-200">
+                          <div className="bg-amber-950/90 border border-amber-500/50 px-2 py-1 rounded-xl text-[9px] flex items-center gap-1.5 text-amber-200 shadow-sm animate-fade-in">
                             <Volume2 className="h-3 w-3 text-amber-400" />
-                            <span className="font-bold">Nota de Voz ({chatAudioTimer || 5}s)</span>
-                            <button type="button" onClick={() => setChatAudioData(null)} className="text-red-400 hover:text-red-300 font-bold ml-1">✕</button>
+                            <span className="font-bold">Gravação de Voz ({chatAudioTimer || 4}s)</span>
+                            <button 
+                              type="button" 
+                              onClick={() => { setChatAudioData(null); setChatAudioTimer(0); }} 
+                              className="text-red-400 hover:text-red-300 font-bold ml-1 cursor-pointer"
+                              title="Eliminar gravação"
+                            >
+                              ✕
+                            </button>
                           </div>
                         )}
                       </div>
                     )}
 
+                    {/* EMOJI PICKER POPOVER */}
+                    {isEmojiPickerOpen && (
+                      <div className="absolute bottom-14 left-2 right-2 bg-slate-900 border border-slate-750 p-2.5 rounded-2xl shadow-2xl z-50 animate-fade-in">
+                        <div className="flex justify-between items-center pb-1.5 mb-1.5 border-b border-slate-800">
+                          <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Selecionar Emoji</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setIsEmojiPickerOpen(false)}
+                            className="text-slate-400 hover:text-white text-xs cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-8 gap-1.5 text-base">
+                          {["😊", "👍", "🏢", "🔑", "🚪", "💡", "🔧", "⚠️", "📄", "💶", "⏱️", "📋", "🤝", "📢", "🚨", "💧", "🛠️", "🚗", "📦", "🧹", "✨", "🔒", "✅", "❌"].map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => {
+                                setNewMsgText(newMsgText + emoji);
+                                setIsEmojiPickerOpen(false);
+                              }}
+                              className="p-1 hover:bg-slate-800 rounded-lg text-center cursor-pointer transition-transform hover:scale-125"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ATTACHMENT / CLIP ACTION MENU POPOVER */}
+                    {isAttachmentMenuOpen && (
+                      <div className="absolute bottom-14 left-2 bg-slate-900 border border-slate-750 p-2 rounded-2xl shadow-2xl z-50 animate-fade-in space-y-1 min-w-[190px]">
+                        <div className="flex justify-between items-center pb-1 mb-1 border-b border-slate-800 px-1">
+                          <span className="text-[8.5px] font-extrabold uppercase tracking-wider text-slate-400">Anexar Ficheiro</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setIsAttachmentMenuOpen(false)}
+                            className="text-slate-400 hover:text-white text-xs cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Option 1: Document */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAttachmentMenuOpen(false);
+                            document.getElementById("pwa-chat-doc-input")?.click();
+                          }}
+                          className="w-full flex items-center space-x-2 p-2 hover:bg-slate-800 text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                        >
+                          <div className="p-1 bg-indigo-500/20 text-indigo-400 rounded-lg">
+                            <File className="h-3.5 w-3.5" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-[9.5px] block">Documento / PDF</span>
+                            <span className="text-[7.5px] text-slate-400">PDF, Word, Excel, TXT</span>
+                          </div>
+                        </button>
+
+                        {/* Option 2: Camera photo */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAttachmentMenuOpen(false);
+                            document.getElementById("pwa-chat-camera-input")?.click();
+                          }}
+                          className="w-full flex items-center space-x-2 p-2 hover:bg-slate-800 text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                        >
+                          <div className="p-1 bg-emerald-500/20 text-emerald-400 rounded-lg">
+                            <Camera className="h-3.5 w-3.5" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-[9.5px] block">Tirar Fotografia (Câmara)</span>
+                            <span className="text-[7.5px] text-slate-400">Acesso à câmara móvel/PC</span>
+                          </div>
+                        </button>
+
+                        {/* Option 3: Gallery Image */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAttachmentMenuOpen(false);
+                            document.getElementById("pwa-chat-photo-input")?.click();
+                          }}
+                          className="w-full flex items-center space-x-2 p-2 hover:bg-slate-800 text-slate-200 rounded-xl text-left cursor-pointer transition-colors"
+                        >
+                          <div className="p-1 bg-amber-500/20 text-amber-400 rounded-lg">
+                            <Image className="h-3.5 w-3.5" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-[9.5px] block">Galeria de Fotos</span>
+                            <span className="text-[7.5px] text-slate-400">Compressão .WEBP imediata</span>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* HIDDEN FILE INPUTS */}
+                    {/* 1. Document Input */}
+                    <input
+                      id="pwa-chat-doc-input"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const sizeStr = file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)}MB` : `${Math.round(file.size / 1024)}KB`;
+                          setChatDocAttachment({ name: file.name, size: sizeStr });
+                          if (!newMsgText) setNewMsgText(`📎 [Documento Anexo: ${file.name}]`);
+                        }
+                      }}
+                      className="hidden"
+                    />
+
+                    {/* 2. Direct Camera Input */}
+                    <input
+                      id="pwa-chat-camera-input"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setChatPhotoWebp("data:image/webp;base64,mockwebpchatbytes...");
+                          setChatPhotoName(`Camera_${file.name || "foto.webp"}`);
+                          if (!newMsgText) setNewMsgText("📷 [Fotografia da Câmara em Anexo]");
+                        }
+                      }}
+                      className="hidden"
+                    />
+
+                    {/* 3. Gallery Input */}
+                    <input
+                      id="pwa-chat-photo-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setChatPhotoWebp("data:image/webp;base64,mockwebpchatbytes...");
+                          setChatPhotoName(file.name || "imagem.webp");
+                          if (!newMsgText) setNewMsgText("🖼️ [Imagem da Galeria em Anexo]");
+                        }
+                      }}
+                      className="hidden"
+                    />
+
+                    {/* CHAT INPUT BAR WITH CLIP, EMOJIS, MIC AND SEND BUTTON */}
                     <form 
                       onSubmit={(e) => { 
                         if (chatAudioData && !newMsgText) {
@@ -2689,34 +3353,48 @@ export default function PWACondominoView({
                         handleEnviarMensagem(e);
                         setChatAudioData(null);
                         setChatPhotoWebp(null);
+                        setChatPhotoName(null);
+                        setChatDocAttachment(null);
+                        setIsEmojiPickerOpen(false);
+                        setIsAttachmentMenuOpen(false);
                       }} 
                       className="flex items-center gap-1.5 shrink-0 pt-2 border-t border-slate-800"
                     >
-                      {/* Photo WebP Input */}
+                      {/* CLIP BUTTON (Anexos / Documentos / Foto com câmara) */}
                       <button
                         type="button"
-                        onClick={() => document.getElementById("pwa-chat-photo-input")?.click()}
-                        className="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl cursor-pointer transition-colors shrink-0"
-                        title="Tirar/Anexar fotografia com conversão automática WebP"
-                      >
-                        <Camera className="h-4 w-4" />
-                      </button>
-                      <input
-                        id="pwa-chat-photo-input"
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setChatPhotoWebp("data:image/webp;base64,mockwebpchatbytes...");
-                            if (!newMsgText) setNewMsgText("📷 [Fotografia WebP em Anexo]");
-                          }
+                        onClick={() => {
+                          setIsAttachmentMenuOpen(!isAttachmentMenuOpen);
+                          setIsEmojiPickerOpen(false);
                         }}
-                        className="hidden"
-                      />
+                        className={`p-2 rounded-xl cursor-pointer transition-colors shrink-0 ${
+                          isAttachmentMenuOpen || chatPhotoWebp || chatDocAttachment
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+                        }`}
+                        title="Anexar documento, fotografia ou aceder à câmara (Clip)"
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </button>
 
-                      {/* Mic Audio Voice Note Recorder */}
+                      {/* EMOJI BUTTON */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEmojiPickerOpen(!isEmojiPickerOpen);
+                          setIsAttachmentMenuOpen(false);
+                        }}
+                        className={`p-2 rounded-xl cursor-pointer transition-colors shrink-0 ${
+                          isEmojiPickerOpen
+                            ? "bg-amber-500 text-slate-950 shadow-xs"
+                            : "bg-slate-800 hover:bg-slate-700 text-amber-400"
+                        }`}
+                        title="Inserir Emoji"
+                      >
+                        <Smile className="h-4 w-4" />
+                      </button>
+
+                      {/* MIC AUDIO VOICE NOTE RECORDER */}
                       <button
                         type="button"
                         onClick={() => {
@@ -2729,21 +3407,36 @@ export default function PWACondominoView({
                             setChatAudioTimer(0);
                           }
                         }}
-                        className={`p-2 ${isRecordingChatAudio ? "bg-red-600 text-white animate-pulse" : "bg-slate-800 hover:bg-slate-700 text-amber-400"} rounded-xl cursor-pointer transition-colors shrink-0`}
-                        title="Gravar mensagem de áudio"
+                        className={`p-2 ${
+                          isRecordingChatAudio 
+                            ? "bg-red-600 text-white animate-pulse" 
+                            : "bg-slate-800 hover:bg-slate-700 text-emerald-400"
+                        } rounded-xl cursor-pointer transition-colors shrink-0`}
+                        title={isRecordingChatAudio ? "Parar gravação de voz" : "Gravar mensagem de áudio (Nota de Voz)"}
                       >
                         <Mic className="h-4 w-4" />
                       </button>
 
+                      {/* TEXT INPUT */}
                       <input 
                         type="text" 
-                        required={!chatAudioData && !chatPhotoWebp}
+                        required={!chatAudioData && !chatPhotoWebp && !chatDocAttachment}
                         value={newMsgText}
                         onChange={e => setNewMsgText(e.target.value)}
-                        placeholder={isRecordingChatAudio ? `🔴 A gravar áudio (${chatAudioTimer}s)...` : "Escreva ao gestor do prédio..."}
-                        className="flex-grow bg-slate-850 border border-slate-750 px-2.5 py-2 text-xs rounded-xl focus:outline-none focus:border-emerald-500 text-white font-medium"
+                        placeholder={
+                          isRecordingChatAudio 
+                            ? `🔴 A gravar áudio (${chatAudioTimer}s)... clique no microfone para parar` 
+                            : "Escreva ao gestor do prédio..."
+                        }
+                        className="flex-grow bg-slate-850 border border-slate-750 px-3 py-2 text-xs rounded-xl focus:outline-none focus:border-emerald-500 text-white font-medium shadow-inner"
                       />
-                      <button type="submit" className="p-2.5 bg-emerald-600 hover:bg-emerald-700 text-slate-950 font-black rounded-xl cursor-pointer transition-colors shrink-0">
+
+                      {/* ENVIAR MENSAGEM BUTTON (Explicit Icon & Tooltip) */}
+                      <button 
+                        type="submit" 
+                        className="p-2.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-xl cursor-pointer transition-all active:scale-95 shadow-md flex items-center justify-center shrink-0"
+                        title="Enviar Mensagem"
+                      >
                         <Send className="h-4 w-4" />
                       </button>
                     </form>
@@ -3319,18 +4012,30 @@ export default function PWACondominoView({
 
       {/* TOUCH CANVAS SIGNATURE MODAL FOR PWA ATAS */}
       {signingAtaTarget && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[105] flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-4 max-w-sm w-full space-y-3.5 text-white shadow-2xl animate-fade-in">
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSigningAtaTarget(null);
+          }}
+          className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-[105] flex items-center justify-center p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-4 max-w-sm w-full space-y-3.5 text-white shadow-2xl animate-fade-in"
+          >
             <div className="flex justify-between items-start border-b border-slate-800 pb-2.5">
               <div>
                 <span className="text-[8px] font-mono font-bold text-emerald-400 uppercase tracking-widest block">Recolha de Assinatura Tátil PWA</span>
                 <h3 className="font-extrabold text-xs text-white leading-tight">{signingAtaTarget.nome || "Ata de Assembleia"}</h3>
               </div>
               <button 
+                type="button"
                 onClick={() => setSigningAtaTarget(null)}
-                className="text-slate-400 hover:text-white p-1"
+                className="flex items-center gap-1 px-2.5 py-1 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0"
+                title="Sair / Fechar"
+                aria-label="Sair / Fechar"
               >
-                ✕
+                <X className="h-3.5 w-3.5 stroke-[2.5]" />
+                <span>Sair</span>
               </button>
             </div>
 
@@ -3378,6 +4083,13 @@ export default function PWACondominoView({
           </div>
         </div>
       )}
+
+      {/* DRAGGABLE GEMINI IA ATIVA BUTTON FOR ADMIN/GESTOR IN PWA */}
+      <DraggableAIFloatingButton
+        loggedUser={loggedUser}
+        predio={predio}
+        isPWA={true}
+      />
 
       {/* SWIPE HOME INDICATOR BOTTOM BAR */}
       <div className="h-4 shrink-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center pb-1">

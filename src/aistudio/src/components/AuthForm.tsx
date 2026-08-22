@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { validatePasswordPolicy, createSecurityLog } from "../services/authService";
+import { validatePasswordPolicy, createSecurityLog } from "../lib/authSecurity";
 
 interface AuthFormProps {
   initialEmail?: string;
@@ -418,4 +418,3 @@ export default function AuthForm({
     </div>
   );
 }
-

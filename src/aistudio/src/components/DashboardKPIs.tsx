@@ -511,4 +511,3 @@ export function DashboardKPIs({
     </div>
   );
 }
-

@@ -1015,4 +1015,3 @@ export function GestaoFornecedores({ predio, fornecedores, onAddFornecedor, logg
     </div>
   );
 }
-

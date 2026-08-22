@@ -78,6 +78,11 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
   const [novoLocalSugerido, setNovoLocalSugerido] = useState("");
   const [novaQtdChave, setNovaQtdChave] = useState(2);
 
+  // Chaveiro Principal (Master Keychain) State
+  const [numChaveiroMaster, setNumChaveiroMaster] = useState("1");
+  const [codigoConjuntoCustom, setCodigoConjuntoCustom] = useState("");
+  const [identificacaoConjuntoCustom, setIdentificacaoConjuntoCustom] = useState("");
+
   // Regras do Prédio (Regulamento Automático) State
   const [regras, setRegras] = useState(() => {
     return {
@@ -179,6 +184,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
   const [codigoPostal, setCodigoPostal] = useState("");
   const [localidade, setLocalidade] = useState("");
   const [nif, setNif] = useState("");
+  const [emailPredio, setEmailPredio] = useState("");
   const [foto, setFoto] = useState<string | null>(null);
 
   const [elevador, setElevador] = useState(false);
@@ -209,6 +215,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
         setCodigoPostal(p.codigo_postal || "");
         setLocalidade(p.localidade || "");
         setNif(p.nif || "");
+        setEmailPredio(p.email || "");
         setFoto(p.foto || null);
 
         setElevador(!!p.patrimonio?.tem_elevador);
@@ -240,6 +247,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
     setCodigoPostal("");
     setLocalidade("");
     setNif("");
+    setEmailPredio("");
     setFoto(null);
     setElevador(false);
     setNumElevadores(0);
@@ -331,6 +339,8 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
         codigo_postal: codigoPostal,
         localidade,
         nif,
+        email: emailPredio.trim() || null,
+        autoresponder_ativo: true,
         foto,
         patrimonio: patrimonioObj
       };
@@ -348,6 +358,8 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
         codigo_postal: codigoPostal,
         localidade,
         nif,
+        email: emailPredio.trim() || null,
+        autoresponder_ativo: true,
         foto,
         patrimonio: patrimonioObj
       };
@@ -414,20 +426,6 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
             </p>
           </div>
         </div>
-
-        {mainTab === "chaves" && ["ADMIN", "EMPRESA_GESTORA", "GESTOR"].includes(loggedUser.role) && (
-          <button
-            type="button"
-            onClick={() => {
-              gerarPdfEtiquetasChaves(predioAtivo?.nome || "Edifício Principal", chaves);
-              alert("PDF de Etiquetas de Chaves (3x1,5 cm) gerado com sucesso para impressão!");
-            }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer transition-all shadow-sm flex items-center space-x-2 shrink-0"
-          >
-            <i className="fa-solid fa-print"></i>
-            <span>Imprimir Etiquetas (3x1.5 cm)</span>
-          </button>
-        )}
       </div>
 
       {mainTab === "chaves" ? (
@@ -443,6 +441,88 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
           </div>
         ) : (
         <div className="space-y-6 animate-fadeIn">
+          {/* CARTÃO: CHAVEIRO PRINCIPAL & CONJUNTO DE CHAVES */}
+          <div className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
+                  <i className="fa-solid fa-key text-lg"></i>
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      Chaveiro Principal (Etiqueta Verde)
+                    </span>
+                    <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">
+                      Nº Chaveiro: {numChaveiroMaster || "1"}
+                    </span>
+                  </div>
+                  <h4 className="text-base font-extrabold mt-0.5 text-slate-900 dark:text-white">
+                    {identificacaoConjuntoCustom || `Conjunto Geral de Chaves - ${predioAtivo?.nome || "Edifício"}`}
+                  </h4>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const masterCode = codigoConjuntoCustom || `${prefixoCodigoIniciais}-CHV-01`;
+                    const masterIdent = identificacaoConjuntoCustom || `Conjunto Geral de Chaves - ${predioAtivo?.nome || "Edifício"}`;
+                    gerarPdfEtiquetasChaves(predioAtivo?.nome || "Edifício Principal", chaves, {
+                      numChaveiro: numChaveiroMaster || "1",
+                      codigoConjunto: masterCode,
+                      identificacaoConjunto: masterIdent
+                    });
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all shadow-sm flex items-center space-x-2 cursor-pointer shrink-0"
+                >
+                  <i className="fa-solid fa-print"></i>
+                  <span>Imprimir Etiquetas</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
+                <label className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block">Código Master do Conjunto</label>
+                <input
+                  type="text"
+                  value={codigoConjuntoCustom}
+                  onChange={e => setCodigoConjuntoCustom(e.target.value)}
+                  placeholder={`Ex: ${prefixoCodigoIniciais}-CHV-01`}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1 md:col-span-2">
+                <label className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block">Identificação do Conjunto de Chaves</label>
+                <input
+                  type="text"
+                  value={identificacaoConjuntoCustom}
+                  onChange={e => setIdentificacaoConjuntoCustom(e.target.value)}
+                  placeholder={`Ex: Conjunto Geral de Chaves e Acessos Comuns - ${predioAtivo?.nome || "Edifício"}`}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 font-medium text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            {/* Resumo de Chaves Integradas no Conjunto */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mr-1">Resumo de Chaves no Conjunto ({chaves.length}):</span>
+              {chaves.slice(0, 7).map(c => (
+                <span key={c.id_chave} className="text-[10px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md font-mono">
+                  <strong className="text-emerald-700 dark:text-emerald-400">{c.codigo_chave}</strong>: {c.area_nome}
+                </span>
+              ))}
+              {chaves.length > 7 && (
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 italic font-semibold">
+                  +{chaves.length - 7} mais...
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Header & Actions */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
@@ -1011,6 +1091,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
                   <th className="py-3 px-4">Edifício / Foto</th>
                   <th className="py-3 px-4">Morada & Localidade</th>
                   <th className="py-3 px-4">NIF</th>
+                  <th className="py-3 px-4">E-mail Oficial (IA / Autoresponder)</th>
                   <th className="py-3 px-4">Património Comum</th>
                   <th className="py-3 px-4 text-right">Ações</th>
                 </tr>
@@ -1018,7 +1099,7 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
               <tbody className="divide-y divide-slate-100">
                 {prediosFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400">
+                    <td colSpan={6} className="py-8 text-center text-slate-400">
                       <i className="fa-solid fa-building-circle-exclamation text-2xl mb-2 block"></i>
                       Nenhum prédio encontrado com os critérios de pesquisa.
                     </td>
@@ -1074,6 +1155,23 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
                         {/* NIF */}
                         <td className="py-3 px-4 font-mono-custom font-bold text-slate-700">
                           {p.nif}
+                        </td>
+
+                        {/* E-mail Oficial & Autoresponder */}
+                        <td className="py-3 px-4">
+                          {p.email ? (
+                            <div className="space-y-1">
+                              <span className="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                                <i className="fa-solid fa-envelope text-[11px]"></i>
+                                {p.email}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+                                <i className="fa-solid fa-robot text-[8px]"></i> Autoresponder Ativo
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">Não configurado</span>
+                          )}
                         </td>
 
                         {/* Património */}
@@ -1227,6 +1325,32 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
           </div>
         </div>
 
+        {/* E-MAIL OFICIAL DO PRÉDIO / AUTORESPONDER & IA */}
+        <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800/40 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-black text-emerald-900 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+              <i className="fa-solid fa-robot text-emerald-600"></i>
+              <span>E-mail Oficial do Prédio (Canal de Autoresponder & Inteligência Artificial)</span>
+            </label>
+            <span className="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-2xs">
+              🤖 Pré-definido IA & Triagem
+            </span>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Este é o e-mail pré-definido para o Autoresponder automático e todas as comunicações ligadas a este prédio. A Inteligência Artificial (Google AI Studio) utilizará este canal para ler as solicitações dos condóminos, consultar o histórico da fração e responder autonomamente com precisão.
+          </p>
+          <div className="relative">
+            <i className="fa-solid fa-envelope absolute left-3.5 top-3 text-emerald-600 text-sm"></i>
+            <input
+              type="email"
+              value={emailPredio}
+              onChange={e => setEmailPredio(e.target.value)}
+              placeholder={`Ex: ${nome ? nome.toLowerCase().replace(/[^a-z0-9]/g, ".") : "edificio"}.${codigoPostal ? codigoPostal.split("-")[0] : "condo"}@condomanager.pt`}
+              className="w-full bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+        </div>
+
         {/* Upload de Fotografia do Prédio */}
         <div className="pt-2">
           <label className="text-xs font-semibold text-slate-500 block mb-1">Fotografia do Prédio (Opcional)</label>
@@ -1333,4 +1457,3 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
     </div>
   );
 }
-

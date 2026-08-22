@@ -10,6 +10,7 @@ interface UserSecurityModalProps {
   loggedUser: LoggedUser;
   biometricsEnabled?: boolean;
   setBiometricsEnabled?: (val: boolean) => void;
+  isFirstAccessMode?: boolean;
 }
 
 export const UserSecurityModal: React.FC<UserSecurityModalProps> = ({
@@ -17,9 +18,13 @@ export const UserSecurityModal: React.FC<UserSecurityModalProps> = ({
   onClose,
   loggedUser,
   biometricsEnabled = false,
-  setBiometricsEnabled
+  setBiometricsEnabled,
+  isFirstAccessMode = false
 }) => {
   if (!isOpen) return null;
+
+  const isProvisional = isFirstAccessMode || 
+    (typeof localStorage !== "undefined" && localStorage.getItem(`provisional_access_${(loggedUser.email || "").toLowerCase()}`) === "true");
 
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xs z-[120] flex items-center justify-center p-4 animate-fade-in">
@@ -51,6 +56,19 @@ export const UserSecurityModal: React.FC<UserSecurityModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-4 overflow-y-auto space-y-4 text-xs">
+          {/* First Access Warning Banner */}
+          {isProvisional && (
+            <div className="p-3.5 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl space-y-1.5 animate-pulse">
+              <div className="flex items-center space-x-2 text-amber-600 dark:text-amber-400 font-extrabold text-xs">
+                <Shield className="h-4 w-4 shrink-0" />
+                <span>Primeiro Acesso Obrigatório: Alteração de Palavra-passe</span>
+              </div>
+              <p className="text-[10.5px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Bem-vindo ao <strong>CondoManager AI</strong>! Por motivos estritos de segurança e privacidade do condomínio, redefina agora a sua palavra-passe provisória recebida por e-mail.
+              </p>
+            </div>
+          )}
+
           <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-850 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <User className="h-4 w-4 text-emerald-500" />
@@ -60,7 +78,7 @@ export const UserSecurityModal: React.FC<UserSecurityModalProps> = ({
               </div>
             </div>
             <span className="text-[9px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-extrabold px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-              Ativo
+              {isProvisional ? "Pendente Redefinição" : "Ativo"}
             </span>
           </div>
 
@@ -74,6 +92,11 @@ export const UserSecurityModal: React.FC<UserSecurityModalProps> = ({
               userRole={loggedUser.role}
               biometricsEnabled={biometricsEnabled}
               setBiometricsEnabled={setBiometricsEnabled}
+              defaultOpen={true}
+              isFirstAccessMode={isProvisional}
+              onPasswordChangeSuccess={() => {
+                onClose();
+              }}
             />
           </div>
         </div>

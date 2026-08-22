@@ -251,7 +251,7 @@ export function GestaoRelatorios({ predio, loggedUser, movimentos = [], fracoes 
                 {/* Official Document Branding Header */}
                 <div className="border-b border-slate-200 pb-4 flex items-center justify-between">
                   <div className="bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-sm inline-flex items-center">
-                    <img src="/marca/18-versao-horizontal-1.png" alt="CondoManager AI" className="h-7 object-contain" />
+                    <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="CondoManager AI" className="h-7 object-contain" />
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] font-black uppercase text-slate-700 tracking-wider block">Documento Oficial de Gestão</span>
@@ -449,4 +449,3 @@ export function GestaoRelatorios({ predio, loggedUser, movimentos = [], fracoes 
     </div>
   );
 }
-

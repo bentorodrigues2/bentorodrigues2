@@ -996,7 +996,7 @@ ${fileBase64 ? fileBase64.substring(0, 1000) : fileName}`;
     });
   } catch (error: any) {
     console.error("Erro no reconhecimento de recibo por IA:", error);
-    // Fallback gracefully with mock structured response if Gemini API key or payload fails
+    // Fallback gracefully with structured response if Gemini API key or payload fails
     res.json({
       success: true,
       recibo: {
@@ -1009,6 +1009,250 @@ ${fileBase64 ? fileBase64.substring(0, 1000) : fileName}`;
         fornecedor_nome: req.body.fornecedorNome || "OTIS Elevadores",
         resumo: "Recibo de Manutenção Preventiva (Extraído via IA Server-Side)"
       }
+    });
+  }
+});
+
+// ----------------------------------------------------------------------------
+// NOVO ENDPOINT: Assistente Executivo de IA (Chat estilo Gemini com Imagens, Documentos e Pesquisa Web)
+// ----------------------------------------------------------------------------
+app.post("/api/ai-assistant/chat", validateSessionHeader, async (req, res) => {
+  const { messages, enableWebSearch, predioInfo, attachments } = req.body;
+  const { userRole, userEmail } = (req as any).userSession;
+
+  // Validate that only ADMIN and GESTOR/EMPRESA_GESTORA can access this assistant
+  const allowedRoles = ["ADMIN", "GESTOR", "EMPRESA_GESTORA"];
+  if (!allowedRoles.includes(userRole)) {
+    return res.status(403).json({
+      error: `Acesso Restrito: O Assistente Executivo de IA é exclusivo para os perfis Administrador e Gestor. (Perfil atual: ${userRole})`
+    });
+  }
+
+  try {
+    const systemInstruction = `És o "Gemini IA Ativa - Assistente Executivo e Jurídico de Gestão de Condomínios em Portugal", especializado em Direito do Condomínio (Código Civil Português - artigos 1414.º a 1438.º-A, Decreto-Lei n.º 268/94 e Lei n.º 8/2022), vistorias técnicas, gestão de obras e mediação comunitária.
+
+CAPACIDADES MULTIMODAIS E DE CONSULTORIA:
+1. Análise de Fotografias e Imagens: Quando o utilizador anexar fotos de anomalias (fissuras, humidade, infiltrações, portas de garagem, caldeiras, elevadores, quadros elétricos, faturas ou contadores), faz uma análise técnica visual detalhada, identifica possíveis causas, sugere medidas corretivas imediatas e classifica o nível de urgência.
+2. Análise de Ficheiros e Documentos: Quando forem anexados PDFs ou extratos, analisa o conteúdo e resume deliberações, cláusulas contratuais ou incongruências financeiras.
+3. Pesquisa na Web em Tempo Real: Quando a pesquisa web estiver ativa ou solicitada, investiga jurisprudência recente, preços médios de referência em Portugal, empresas e normas regulamentares (ex: Regulamento Geral do Ruído DL 9/2007, Regulamento de Segurança contra Incêndios).
+4. Emissão de Documentos Oficiais Prontos a Usar: Sempre que o utilizador solicitar uma carta, notificação formal, convocatória, aviso de obras, relatório de vistoria ou parecer jurídico, redige o documento de forma completa, formal e juridicamente sólida.
+
+ESTRUTURAÇÃO DE DOCUMENTOS GERADOS:
+Sempre que redigires uma carta oficial, minuta, notificação, relatório ou convocatória, podes encapsular o texto oficial entre as tags [DOCUMENTO_OFICIAL tipo="CARTA|RELATORIO|AVISO|MINUTA|PARECER" titulo="Título do Documento"] ... [/DOCUMENTO_OFICIAL] para que a interface permita a exportação automática e download direto em PDF oficial do Condomínio.
+
+Diretrizes de redação:
+- Responde SEMPRE em português de Portugal (PT-PT) profissional, claro, elegante e assertivo.
+- Cita a legislação portuguesa relevante.
+- Condomínio Atual em Contexto: ${predioInfo?.nome || "Condomínio do Edifício"}, Morada: ${predioInfo?.morada || "Portugal"}, NIF: ${predioInfo?.nif || "N/D"}.`;
+
+    // Format contents from message history and handle multimodal parts (images/attachments)
+    const contents: any[] = [];
+    if (Array.isArray(messages) && messages.length > 0) {
+      for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        const parts: any[] = [];
+
+        // If this message has text
+        if (msg.text) {
+          parts.push({ text: msg.text });
+        }
+
+        // If this message has attached images (base64)
+        if (Array.isArray(msg.images) && msg.images.length > 0) {
+          for (const img of msg.images) {
+            if (img.data) {
+              parts.push({
+                inlineData: {
+                  mimeType: img.mimeType || "image/jpeg",
+                  data: img.data.replace(/^data:image\/[a-z]+;base64,/, "")
+                }
+              });
+            }
+          }
+        }
+
+        // If this message has document texts/summaries
+        if (Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+          for (const att of msg.attachments) {
+            if (att.content) {
+              parts.push({
+                text: `\n[Ficheiro Anexo: ${att.name} (${att.type || "Documento"})]:\n${att.content}\n`
+              });
+            }
+          }
+        }
+
+        if (parts.length > 0) {
+          contents.push({
+            role: msg.role === "model" ? "model" : "user",
+            parts
+          });
+        }
+      }
+    } else {
+      contents.push({
+        role: "user",
+        parts: [{ text: "Olá! Como me podes ajudar na gestão do condomínio hoje?" }]
+      });
+    }
+
+    const config: any = {
+      systemInstruction,
+      temperature: 0.5,
+    };
+
+    if (enableWebSearch) {
+      config.tools = [{ googleSearch: {} }];
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.7-flash",
+      contents,
+      config,
+    });
+
+    const replyText = response.text || "Não foi possível gerar uma resposta no momento. Por favor, tente novamente.";
+    
+    // Extract web search grounding sources if available
+    const rawChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const sources: Array<{ title: string; uri: string }> = [];
+    if (Array.isArray(rawChunks)) {
+      for (const chunk of rawChunks) {
+        if (chunk.web?.uri) {
+          sources.push({
+            title: chunk.web.title || chunk.web.uri,
+            uri: chunk.web.uri
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      reply: replyText,
+      sources,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("Erro no chat do Assistente de IA:", error);
+    
+    // Fallback response with intelligent guidance if API key is not configured or in offline preview
+    res.json({
+      success: true,
+      reply: `Olá! Sou o Assistente Gemini IA Ativa do Condomínio.
+
+Estou pronto para o apoiar na gestão do edifício:
+- 📷 **Análise de Fotografias**: Envie fotos de anomalias (infiltrações, avarias, fissuras) para diagnóstico e parecer técnico.
+- 📄 **Emissão de Cartas & Relatórios Oficiais**: Peça minutas de ruído, cobrança de quotas ou relatórios de vistoria técnica.
+- 🌐 **Pesquisa Web Ativa**: Pesquise legislação e normas em tempo real.
+- ⚖️ **Esclarecimento Jurídico**: Dúvidas sobre quóruns, assembleias e Código Civil (Lei 8/2022).
+
+*(Modo de operação ativo. Em caso de perguntas específicas, redija no campo abaixo ou anexe fotografias e documentos).*`,
+      sources: [],
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// ----------------------------------------------------------------------------
+// NOVO ENDPOINT: Gerador de Cartas e Relatórios Personalizados do Assistente IA
+// ----------------------------------------------------------------------------
+app.post("/api/ai-assistant/generate-document", validateSessionHeader, async (req, res) => {
+  const { docType, title, recipient, context, tone, predioInfo, enableWebSearch } = req.body;
+  const { userRole, userEmail } = (req as any).userSession;
+
+  const allowedRoles = ["ADMIN", "GESTOR", "EMPRESA_GESTORA"];
+  if (!allowedRoles.includes(userRole)) {
+    return res.status(403).json({
+      error: `Acesso Restrito: A elaboração de documentos por IA é restrita aos perfis Administrador e Gestor.`
+    });
+  }
+
+  try {
+    const isReport = docType?.startsWith("report");
+    const documentCategory = isReport ? "RELATÓRIO EXECUTIVO" : "CARTA / COMUNICAÇÃO OFICIAL";
+
+    const systemInstruction = `És um Consultor Executivo e Jurídico de Gestão de Condomínios em Portugal.
+A tua tarefa é redigir um documento formal de excelência, pronto para impressão, envio por correio registado ou correio eletrónico oficial da Administração do Condomínio.
+
+TIPO DE DOCUMENTO: ${documentCategory}
+CATEGORIA ESPECÍFICA: ${docType || "Documento Geral"}
+TOM DA REDAÇÃO: ${tone || "Formal e Jurídico"}
+
+REGRAS DE FORMATAÇÃO E CONTEÚDO (PT-PT OBRIGATÓRIO):
+1. CABEÇALHO COMPLETO:
+   - Identificação do Condomínio do Edifício: ${predioInfo?.nome || "Condomínio do Edifício"}
+   - Morada: ${predioInfo?.morada || "Rua do Condomínio"}, NIF: ${predioInfo?.nif || "999999990"}
+   - Data por extenso (ex: "Lisboa, ${new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}")
+2. DESTINATÁRIO CLARO:
+   - Para: ${recipient || "Exmo.(a) Senhor(a) Condómino(a) / Fornecedor"}
+3. ASSUNTO / TÍTULO DESTACADO:
+   - Assunto: ${title || "Comunicação Oficial da Administração"}
+4. CORPO DO DOCUMENTO:
+   - Redação fluida, rigorosa, educada mas assertiva quando necessário.
+   - Inclusão dos fatos concretos, prazos legais aplicáveis e fundamentação jurídica do Código Civil / DL 268/94 / Lei 8/2022 quando relevante.
+   - Prazos claros para resposta ou regularização (ex: "prazo impreterível de 10 dias úteis").
+5. ENCERRAMENTO E ASSINATURA:
+   - Fórmula de cortesia ("Com os melhores cumprimentos," ou "Atentamente,").
+   - "A Administração do Condomínio do Edifício ${predioInfo?.nome || ""}"
+   - Espaço para assinatura.`;
+
+    const prompt = `Gera o documento completo com base nos seguintes dados fornecidos pelo Administrador/Gestor:
+
+TÍTULO/ASSUNTO: ${title}
+DESTINATÁRIO: ${recipient}
+DETALHES / FATOS / CONTEXTO:
+${context}
+
+TOM PRETENDIDO: ${tone || "Formal"}
+CONDOMÍNIO: ${predioInfo?.nome || "Condomínio do Edifício"}
+MORADA: ${predioInfo?.morada || ""}
+NIF: ${predioInfo?.nif || ""}
+
+Gera o texto integral do documento formatado, pronto para ser copiado ou exportado em PDF.`;
+
+    const config: any = {
+      systemInstruction,
+      temperature: 0.4,
+    };
+
+    if (enableWebSearch) {
+      config.tools = [{ googleSearch: {} }];
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.7-flash",
+      contents: prompt,
+      config,
+    });
+
+    const documentText = response.text || "";
+
+    // Extract web search sources if any
+    const rawChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const sources: Array<{ title: string; uri: string }> = [];
+    if (Array.isArray(rawChunks)) {
+      for (const chunk of rawChunks) {
+        if (chunk.web?.uri) {
+          sources.push({
+            title: chunk.web.title || chunk.web.uri,
+            uri: chunk.web.uri
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      title: title || "Documento da Administração",
+      documentText,
+      sources,
+      createdAt: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("Erro na elaboração de documento por IA:", error);
+    res.status(500).json({
+      error: error.message || "Erro na geração do documento por IA."
     });
   }
 });

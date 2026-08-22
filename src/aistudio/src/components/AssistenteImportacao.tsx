@@ -336,7 +336,7 @@ export function AssistenteImportacao({ onImportComplete, loggedUser }: Assistent
       {/* HEADER PROGRESS STEPPER */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl flex items-center justify-between no-print">
         <div className="flex items-center space-x-3">
-          <img src="/marca/02-versao-horizontal.webp" alt="CondoManager AI" className="h-7 object-contain mr-1" />
+          <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="CondoManager AI" className="h-7 object-contain mr-1" />
           <div className="p-2 bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded-lg">
             <i className="fa-solid fa-file-import text-lg"></i>
           </div>
@@ -966,4 +966,3 @@ Fração A - Maria Carmo Neto - NIF 231456789 - Quota em atraso: 120€..."
     </div>
   );
 }
-
