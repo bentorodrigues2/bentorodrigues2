@@ -22,7 +22,7 @@ export default function LayoutTop({ onLoginSuccess }: LayoutTopProps) {
           className="area-pessoal-btn"
           onClick={() => setShowAuth(true)}
         >
-          Ãrea Pessoal
+          Área Pessoal
         </button>
       </div>
 
@@ -50,4 +50,5 @@ export default function LayoutTop({ onLoginSuccess }: LayoutTopProps) {
     </div>
   );
 }
+
 
