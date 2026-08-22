@@ -1,7 +1,7 @@
-ï»¿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import LayoutTop from "./components/LayoutTop";
 
-// CORREÃ‡ÃƒO: usar o PortalAutenticacao ORIGINAL do AI Studio
+// CORREÇÃO: usar o PortalAutenticacao ORIGINAL do AI Studio
 import PortalAutenticacao from "./aistudio/src/components/PortalAutenticacao";
 
 export default function App() {
@@ -12,7 +12,7 @@ export default function App() {
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
   const [currentRoute, setCurrentRoute] = useState("/");
 
-  // Tema automÃ¡tico
+  // Tema automático
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     setTheme(mq.matches ? "dark" : "light");
@@ -27,7 +27,7 @@ export default function App() {
     setBrowserEmail(cleanEmail);
     setBrowserIsLoggedOut(false);
 
-    // Rota apÃ³s login
+    // Rota após login
     setCurrentRoute("/dashboard");
     window.history.pushState({}, "", "/dashboard");
   };
@@ -36,7 +36,7 @@ export default function App() {
   useEffect(() => {
     const updateRoute = () => {
       const path = window.location.pathname;
-      if (path === "/dashboard") setCurrentRoute("/dashboard");
+      if (path === "/dashboard") setCurrentRoute("/dashboard"); else if (path === "/auth") setCurrentRoute("/auth");
       else setCurrentRoute("/");
     };
     updateRoute();
@@ -46,7 +46,7 @@ export default function App() {
 
   // LOGIN
   if (browserIsLoggedOut) {
-    if (currentRoute === "/") {
+    if (currentRoute === "/auth") { return (<div className="h-screen w-screen flex items-center justify-center p-4"><PortalAutenticacao initialEmail={browserEmail} initialErrorMessage={loginErrorMessage} onLoginSuccess={handleLoginFromTop} /></div>); } if (currentRoute === "/") {
       return <LayoutTop onLoginSuccess={handleLoginFromTop} />;
     }
     return (
