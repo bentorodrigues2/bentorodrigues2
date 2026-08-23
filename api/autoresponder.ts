@@ -1,5 +1,5 @@
-﻿import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+﻿import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -13,25 +13,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { from, to, subject, text } = req.body;
 
+    // Guardar no Supabase
     const { data, error } = await supabase
-      .from('mensagens_recebidas')
+      .from("mensagens_recebidas")
       .insert({
         remetente_email: from,
         destinatario_email: to,
         assunto: subject,
         corpo_texto: text,
-        status_resposta: 'PENDENTE'
+        status_resposta: "PENDENTE"
       })
       .select()
       .single();
 
     if (error) throw error;
 
-    const autoresp = await fetch(${SUPABASE_URL}/functions/v1/autoresponder-ia, {
-      method: 'POST',
+    // Chamar função IA no Supabase
+    const autoresp = await fetch(`${SUPABASE_URL}/functions/v1/autoresponder-ia`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: Bearer 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SERVICE_ROLE}`
       },
       body: JSON.stringify({
         id_mensagem: data.id,
@@ -42,35 +44,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const respostaIA = await autoresp.json();
 
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
+    // Enviar email via Resend
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
       headers: {
-        Authorization: Bearer ${SERVICE_ROLE},
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${EMAIL_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         from: FROM,
         to: from,
         reply_to: REPLY_TO,
-        subject: Re: ${subject},
+        subject: `Re: ${subject}`,
         text: respostaIA.resposta
       })
     });
 
+    // Atualizar Supabase
     await supabase
-      .from('mensagens_recebidas')
+      .from("mensagens_recebidas")
       .update({
-        status_resposta: 'RESPONDIDO_IA',
+        status_resposta: "RESPONDIDO_IA",
         resposta_gerada: respostaIA.resposta,
         data_resposta: new Date(),
         remetente_resposta_utilizado: FROM
       })
-      .eq('id', data.id);
+      .eq("id", data.id);
 
     return res.status(200).json({ ok: true });
   } catch (err: any) {
-    console.error(err);
+    console.error("autoresponder error:", err);
     return res.status(500).json({ error: err.message });
   }
 }
-
