@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { Predio, GestorCarteira } from "./types";
 import { 
   LOGO_HORIZONTAL_BASE64, 
   WATERMARK_BASE64, 
@@ -111,9 +112,9 @@ export function downloadBlob(blob: Blob, fileName: string) {
 
 export function exportToXLS(filename: string, headers: string[], rows: string[][]) {
   let csvContent = "\uFEFF"; // BOM for Portuguese characters
-    csvContent += headers.join(";") + "\n";
+  csvContent += headers.join(";") + "\n";
   rows.forEach(row => {
-    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
+    csvContent += row.map(v => typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
   });
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const finalName = filename.endsWith(".xls") || filename.endsWith(".csv") ? filename : `${filename}.xls`;
@@ -927,7 +928,7 @@ export function downloadListaCondominosPDF(predioNome: string = "Condomínio Act
   }
 }
 
-export const DEMO_ACCOUNTS_MAP: Record<string, { role: "ADMIN" | "EMPRESA_GESTORA" | "USER" | "TECNICO" | "LIMPEZAS" | "JURIDICO" | "AUDITOR" | "CONTABILISTA"; nome: string; pass: string; title: string }> = {
+export const DEMO_ACCOUNTS_MAP: Record<string, { role: "ADMIN" | "EMPRESA_GESTORA" | "USER" | "INQUILINO" | "TECNICO" | "LIMPEZAS" | "JURIDICO" | "AUDITOR" | "CONTABILISTA"; nome: string; pass: string; title: string }> = {
   // Administrador Interno
   "admin@condomanager.pt": { role: "ADMIN", nome: "Carlos Administrador", pass: "Admin12345!", title: "👑 Administrador Interno" },
   "carlos.adm@condomanager.pt": { role: "ADMIN", nome: "Carlos Administrador", pass: "Admin12345!", title: "👑 Administrador Interno" },
@@ -936,10 +937,15 @@ export const DEMO_ACCOUNTS_MAP: Record<string, { role: "ADMIN" | "EMPRESA_GESTOR
   "gestora@condomanager.pt": { role: "EMPRESA_GESTORA", nome: "Gestão Forte, Lda", pass: "Gestora12345!", title: "🏢 Empresa Gestora" },
   "geral@gestaoforte.pt": { role: "EMPRESA_GESTORA", nome: "Gestão Forte, Lda", pass: "Gestora12345!", title: "🏢 Empresa Gestora" },
 
-  // Portal do Condómino
-  "condomino@condomanager.pt": { role: "USER", nome: "Ana Silva (Fração A)", pass: "Condomino12345!", title: "🏠 Portal do Condómino" },
-  "ana.silva@gmail.com": { role: "USER", nome: "Ana Silva (Fração A)", pass: "Condomino12345!", title: "🏠 Portal do Condómino" },
-  "amelia.sousa@yahoo.com": { role: "USER", nome: "D.ª Amélia Sousa (Fração B)", pass: "Condomino12345!", title: "🏠 Portal do Condómino" },
+  // Portal do Condómino (Proprietário)
+  "condomino@condomanager.pt": { role: "USER", nome: "Ana Silva (Fração A)", pass: "Condomino12345!", title: "🏠 Portal do Condómino (Proprietário)" },
+  "ana.silva@gmail.com": { role: "USER", nome: "Ana Silva (Fração A)", pass: "Condomino12345!", title: "🏠 Portal do Condómino (Proprietário)" },
+  "amelia.sousa@yahoo.com": { role: "USER", nome: "D.ª Amélia Sousa (Fração B)", pass: "Condomino12345!", title: "🏠 Portal do Condómino (Proprietário)" },
+
+  // Inquilino / Arrendatário (Sem acesso a dados financeiros)
+  "inquilino@condomanager.pt": { role: "INQUILINO", nome: "Bruno Ferreira (Inquilino Fração A)", pass: "Inquilino12345!", title: "🔑 Portal do Inquilino / Arrendatário" },
+  "bruno.inquilino@gmail.com": { role: "INQUILINO", nome: "Bruno Ferreira (Inquilino Fração A)", pass: "Inquilino12345!", title: "🔑 Portal do Inquilino / Arrendatário" },
+  "ricardo.loc@gmail.com": { role: "INQUILINO", nome: "Ricardo Inquilino (Fração A)", pass: "Inquilino12345!", title: "🔑 Portal do Inquilino / Arrendatário" },
 
   // Técnico / Vistorias
   "tecnico@condomanager.pt": { role: "TECNICO", nome: "Eng. Rui Melo", pass: "Tecnico12345!", title: "🔍 Inspetor Técnico" },
@@ -981,6 +987,9 @@ export function resolveUserByEmail(rawEmail: string) {
   }
   if (cleanEmail.includes('gestor') || cleanEmail.includes('geral') || cleanEmail.includes('empresa') || cleanEmail.includes('forte')) {
     return { role: "EMPRESA_GESTORA" as const, nome: "Gestão Forte, Lda", pass: "Gestora12345!", title: "🏢 Empresa Gestora", email: cleanEmail };
+  }
+  if (cleanEmail.includes('inquilino') || cleanEmail.includes('arrendatario') || cleanEmail.includes('locatario') || cleanEmail.includes('ricardo.loc') || cleanEmail.includes('bruno.inquilino')) {
+    return { role: "INQUILINO" as const, nome: "Bruno Ferreira (Inquilino)", pass: "Inquilino12345!", title: "🔑 Portal do Inquilino / Arrendatário", email: cleanEmail };
   }
   if (cleanEmail.includes('tecnic') || cleanEmail.includes('melo') || cleanEmail.includes('melim') || cleanEmail.includes('vistoria')) {
     return { role: "TECNICO" as const, nome: "Eng. Rui Melo", pass: "Tecnico12345!", title: "🔍 Inspetor Técnico", email: cleanEmail };
@@ -1399,7 +1408,7 @@ export function generateReceiptPDF(data: ReceiptPdfData): jsPDF {
   doc.setFontSize(6.5);
   doc.setTextColor(226, 232, 240);
   doc.text(`Data de Pagamento: ${data.dataPagamento}`, 118, 16);
-    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
+  const movsListStr = items.map(i => i.movimentoNum).join(", ");
   const movsDisplay = movsListStr.length > 38 ? movsListStr.substring(0, 38) + "..." : movsListStr;
   doc.text(`Nºs Movimentos: ${movsDisplay}`, 118, 20);
 
@@ -1604,7 +1613,7 @@ export function gerarPdfEtiquetasChaves(
     const setIdent = opcoesChaveiro?.identificacaoConjunto || "Conjunto Geral do Chaveiro Principal";
 
     // Summary of key areas contained in keychain
-    csvContent += row.map(v => typeof v === "string" ? `"${v.replace(/"/g, '""')}"` : v).join(";") + "\n";
+    const keyNamesList = chaves.map(c => c.area_nome || "Chave").join(", ");
     const keyNamesShort = keyNamesList.length > 32 ? keyNamesList.substring(0, 30) + "…" : keyNamesList;
 
     // Prepare items list: 1st item is the Green CondoManager AI Master Keychain Tag, followed by individual key tags
@@ -1794,13 +1803,247 @@ export function gerarPdfEtiquetasChaves(
   }
 }
 
+/**
+ * Gera o PDF Oficial de Boas-Vindas, Atribuição de Perfil e Credenciais Provisórias para Gestores da Empresa
+ */
+export function gerarPdfBoasVindasGestor(
+  gestor: GestorCarteira,
+  predios: Predio[],
+  empresaNome: string = "Gestão Forte Administrações Lda",
+  logoUrl?: string
+) {
+  try {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    addPdfWatermark(doc);
+
+    // Header Background
+    doc.setFillColor(15, 23, 42); // Slate-900
+    doc.rect(0, 0, 210, 42, "F");
+
+    // Accent line
+    doc.setFillColor(16, 185, 129); // Emerald-500
+    doc.rect(0, 41, 210, 2, "F");
+
+    // Title and Company Name
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text(empresaNome.toUpperCase(), 15, 18);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(148, 163, 184);
+    doc.text("SISTEMA INTEGRADO DE GESTÃO DE CONDOMÍNIOS • CONDOMANAGER AI", 15, 26);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(52, 211, 153); // Emerald light
+    doc.text("CREDENCIAL DE ACESSO & MANUAL DE ATRIBUIÇÃO DE CARTEIRA", 15, 34);
+
+    let y = 52;
+
+    // Greeting box
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(15, y, 180, 24, 3, 3, "F");
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(15, y, 180, 24, 3, 3, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Bem-vindo(a), ${gestor.nome}!`, 20, y + 8);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(
+      "Foi-lhe atribuída uma carteira de edifícios na plataforma CondoManager AI. Abaixo encontra os dados de acesso e diretrizes.",
+      20,
+      y + 16
+    );
+
+    y += 32;
+
+    // SECTION 1: PERFIL & DADOS PESSOAIS
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("1. IDENTIFICAÇÃO DO COLABORADOR & PERFIL", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 8;
+
+    // Table of user info
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, y, 180, 26, "F");
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(15, y, 180, 26, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Nome Completo:", 20, y + 7);
+    doc.text("E-mail Profissional:", 20, y + 14);
+    doc.text("Telemóvel Direto:", 20, y + 21);
+
+    doc.text("Perfil Atribuído:", 110, y + 7);
+    doc.text("Data de Atribuição:", 110, y + 14);
+    doc.text("Estado da Conta:", 110, y + 21);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(gestor.nome, 52, y + 7);
+    doc.text(gestor.email, 52, y + 14);
+    doc.text(gestor.tlm || "—", 52, y + 21);
+
+    const perfilStr = gestor.perfil === "ADMIN" ? "👑 Administrador de Condomínio" : "💼 Gestor de Portfólio / Operacional";
+    doc.setTextColor(gestor.perfil === "ADMIN" ? 180 : 16, gestor.perfil === "ADMIN" ? 83 : 185, gestor.perfil === "ADMIN" ? 9 : 129);
+    doc.text(perfilStr, 142, y + 7);
+
+    doc.setTextColor(15, 23, 42);
+    doc.text(gestor.data_atribuicao || new Date().toISOString().split("T")[0], 142, y + 14);
+    doc.setTextColor(217, 119, 6);
+    doc.text("Pendente 1º Acesso", 142, y + 21);
+
+    y += 34;
+
+    // SECTION 2: CREDENCIAIS PROVISÓRIAS & SEGURANÇA
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("2. CREDENCIAIS DE ACESSO PROVISÓRIAS", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 8;
+
+    doc.setFillColor(254, 243, 199); // Amber-100
+    doc.roundedRect(15, y, 180, 32, 3, 3, "F");
+    doc.setDrawColor(245, 158, 11);
+    doc.roundedRect(15, y, 180, 32, 3, 3, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(146, 64, 14); // Amber-900
+    doc.text("ENDEREÇO DA PLATAFORMA: https://condomanager.ai/app", 20, y + 8);
+    doc.text(`UTILIZADOR (E-MAIL): ${gestor.email}`, 20, y + 15);
+    doc.text(`PALAVRA-PASSE PROVISÓRIA: ${gestor.password_provisoria || "Gestor#2026!"}`, 20, y + 22);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(185, 28, 28); // Red-700
+    doc.text("⚠️ OBRIGATÓRIO: No primeiro acesso ao portal, o sistema exigirá a alteração imediata da palavra-passe.", 20, y + 28);
+
+    y += 40;
+
+    // SECTION 3: PRÉDIOS ATRIBUÍDOS & CONTACTOS DISPONÍVEIS
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text("3. CARTEIRA DE PRÉDIOS SOB GESTÃO DIRETA", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 7;
+
+    const prediosGeridos = predios.filter(p => gestor.predios_atribuidos.includes(p.id_predio));
+
+    if (prediosGeridos.length === 0) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text("Nenhum prédio diretamente associado no momento.", 20, y + 5);
+      y += 10;
+    } else {
+      prediosGeridos.forEach((p, idx) => {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(15, y, 180, 12, "F");
+        doc.setDrawColor(226, 232, 240);
+        doc.rect(15, y, 180, 12, "S");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`${idx + 1}. ${p.nome || p.morada_linha1}`, 20, y + 5);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Morada: ${p.morada_linha1}, Nº ${p.num_porta} • NIF: ${p.nif} • E-mail Prédio: ${p.email || "—"}`, 20, y + 9.5);
+
+        y += 14;
+      });
+    }
+
+    y += 4;
+
+    // Notice about contacts being visible to condóminos
+    doc.setFillColor(236, 253, 245); // Emerald-50
+    doc.roundedRect(15, y, 180, 16, 2, 2, "F");
+    doc.setDrawColor(16, 185, 129);
+    doc.roundedRect(15, y, 180, 16, 2, 2, "S");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(6, 95, 70);
+    doc.text("📞 DISPONIBILIDADE DE CONTACTOS AOS CONDÓMINOS:", 20, y + 6);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      `O seu Nome, E-mail (${gestor.email}) e TLM (${gestor.tlm}) estão visíveis na PWA e Portal dos Condóminos dos prédios atribuídos.`,
+      20,
+      y + 11.5
+    );
+
+    y += 24;
+
+    // SECTION 4: ESCOPO DE COMPETÊNCIAS DO PERFIL
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("4. RESUMO DE FUNCIONALIDADES DISPONÍVEIS", 15, y);
+    doc.line(15, y + 2, 195, y + 2);
+
+    y += 7;
+
+    const funcoes = gestor.perfil === "ADMIN" 
+      ? [
+          "• Administração Financeira Total: Emissão de quotas, orçamentos, aprovação de despesas e conciliação bancária IA.",
+          "• Convocatórias & Assembleias Gerais: Redação de atas por IA, gestão de presenças e procurações.",
+          "• Controlo Cadastral & Jurídico: Registo de prédios, frações, autos de vistoria e contencioso/cobrança coerciva.",
+          "• Gestão de Autoresponder & Regras de Prédio: Parametrização da IA Gemini para triagem de e-mails."
+        ]
+      : [
+          "• Gestão Operacional de Ocorrências: Receção, triagem, adjudicação e validação fotográfica de avarias.",
+          "• Supervisão de Limpezas & Vistorias Técnicas: Validação de relatórios técnicos e controlo de chaves do edifício.",
+          "• Comunicação Direta com Condóminos: Emissão de avisos de corte, comunicados e chat de apoio ao residente.",
+          "• Consulta Documental & Reservas: Acesso ao arquivo digital e aprovação de reservas de espaços comuns."
+        ];
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(51, 65, 85);
+    funcoes.forEach(fn => {
+      doc.text(fn, 18, y);
+      y += 5.5;
+    });
+
+    // Footer
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Documento emitido automaticamente por ${empresaNome} em ${new Date().toLocaleDateString("pt-PT")}. Confidencial.`, 105, 288, { align: "center" });
+
+    doc.save(`Credencial_BoasVindas_${gestor.nome.replace(/\s+/g, "_")}_${gestor.perfil}.pdf`);
+  } catch (err) {
+    console.error("Erro ao gerar PDF de Boas-Vindas do Gestor:", err);
+    alert("Ocorreu um erro ao gerar o PDF de Boas-Vindas.");
+  }
+}
+
 export * from './utils/registerServiceWorker';
 export * from './utils/requestPermission';
 export * from './utils/subscribeUser';
 export * from './utils/loadUserPreferences';
 export * from './utils/saveUserPreferences';
 export * from './utils/sendNotification';
-
 
 
 

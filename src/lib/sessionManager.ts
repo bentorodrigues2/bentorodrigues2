@@ -9,7 +9,8 @@ export type UserRole =
   | "CONTABILISTA" 
   | "JURIDICO" 
   | "LIMPEZAS" 
-  | "USER";
+  | "USER"
+  | "INQUILINO";
 
 export interface SessionToken {
   tokenId: string;
@@ -57,44 +58,51 @@ export const RoleNavigationMap: Record<UserRole, RoleNavigationConfig> = {
   TECNICO: {
     role: "TECNICO",
     defaultTab: "painel",
-    allowedTabs: ["painel", "manutencao_ocorrencias", "ocorrencias", "limpezas_vistorias", "manutencao_intervencoes", "manutencao_concluidas", "manutencao_agenda", "manutencao_extraordinarias", "inventario_tecnico", "fornecedores", "arquivo", "documentos", "manutencao_arquivo"],
+    allowedTabs: ["painel", "predios", "predios_cadastro", "predios_chaves", "manutencao_ocorrencias", "ocorrencias", "limpezas_vistorias", "manutencao_intervencoes", "manutencao_concluidas", "manutencao_agenda", "manutencao_extraordinarias", "inventario_tecnico", "fornecedores", "arquivo", "documentos", "manutencao_arquivo", "vistorias_limpezas"],
     displayName: "Técnico de Manutenção",
     badgeColor: "bg-amber-500/20 text-amber-400 border-amber-500/30"
   },
   LIMPEZAS: {
     role: "LIMPEZAS",
     defaultTab: "painel",
-    allowedTabs: ["painel", "vistorias_limpezas", "limpezas_vistorias", "limpezas_incidencias", "manutencao_ocorrencias", "ocorrencias"],
+    allowedTabs: ["painel", "predios", "predios_cadastro", "predios_chaves", "vistorias_limpezas", "limpezas_vistorias", "limpezas_incidencias", "manutencao_ocorrencias", "ocorrencias"],
     displayName: "Equipa de Limpeza",
     badgeColor: "bg-teal-500/20 text-teal-400 border-teal-500/30"
   },
   JURIDICO: {
     role: "JURIDICO",
     defaultTab: "contencioso_juridico",
-    allowedTabs: ["painel", "contencioso_juridico", "contencioso_juridico_nd", "contencioso_juridico_doc_obrig", "contencioso_juridico_cartas", "contencioso_juridico_bni", "contencioso_juridico_regulamento", "contencioso_juridico_estatutos", "contencioso_juridico_ia", "assembleias", "arquivo", "documentos"],
+    allowedTabs: ["painel", "contencioso_juridico", "contencioso_juridico_nd", "contencioso_juridico_doc_obrig", "contencioso_juridico_cartas", "contencioso_juridico_bni", "contencioso_juridico_regulamento", "contencioso_juridico_estatutos", "contencioso_juridico_ia", "assembleias", "arquivo", "documentos", "fracoes", "fracoes_perfis", "predios_regras"],
     displayName: "Apoio Jurídico",
     badgeColor: "bg-purple-500/20 text-purple-400 border-purple-500/30"
   },
   AUDITOR: {
     role: "AUDITOR",
     defaultTab: "painel",
-    allowedTabs: ["painel", "auditoria_interna", "movimentos", "financeiro_recibos", "financeiro_relatorios", "financeiro_extratos", "arquivo", "documentos", "assembleias"],
+    allowedTabs: ["painel", "auditoria_interna", "movimentos", "financeiro_recibos", "financeiro_relatorios", "financeiro_extratos", "arquivo", "documentos", "assembleias", "contas"],
     displayName: "Auditor Externo",
     badgeColor: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
   },
   CONTABILISTA: {
     role: "CONTABILISTA",
     defaultTab: "movimentos",
-    allowedTabs: ["painel", "movimentos", "financeiro_recibos", "financeiro_relatorios", "financeiro_extratos", "financeiro_quotas_mensais", "financeiro_quotas_extra", "contas", "emissao", "fundo_reserva", "contabilidade_interna", "conciliacao"],
+    allowedTabs: ["painel", "movimentos", "financeiro_recibos", "financeiro_relatorios", "financeiro_extratos", "financeiro_quotas_mensais", "financeiro_quotas_extra", "contas", "emissao", "fundo_reserva", "contabilidade_interna", "conciliacao", "arquivo", "documentos", "assembleias", "ia_avancada"],
     displayName: "Contabilista Certificado",
     badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30"
   },
   USER: {
     role: "USER",
-    defaultTab: "painel",
-    allowedTabs: ["painel", "portal_condomino", "fracoes", "fracoes_proprietario", "financeiro_extratos", "financeiro_recibos", "arquivo", "documentos", "manutencao_ocorrencias", "ocorrencias", "vistorias_limpezas", "reservas", "assembleias", "predios", "predios_cadastro", "predios_regras"],
-    displayName: "Condómino",
+    defaultTab: "portal_condomino",
+    allowedTabs: ["painel", "portal_condomino", "predios", "predios_cadastro", "predios_regras", "fracoes", "fracoes_perfis", "comunicacao_broadcast", "comunicacao_sondagens", "comunicacao_questionarios", "assembleias", "financeiro_extratos", "financeiro_recibos", "vistorias_limpezas", "manutencao_ocorrencias", "ocorrencias", "manutencao_concluidas", "reservas", "arquivo", "documentos"],
+    displayName: "Condómino (Proprietário)",
     badgeColor: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
+  },
+  INQUILINO: {
+    role: "INQUILINO",
+    defaultTab: "portal_condomino",
+    allowedTabs: ["portal_condomino", "painel", "predios", "predios_cadastro", "predios_regras", "comunicacao_broadcast", "comunicacao_sondagens", "comunicacao_questionarios", "vistorias_limpezas", "manutencao_ocorrencias", "ocorrencias", "manutencao_concluidas", "reservas", "arquivo", "documentos"],
+    displayName: "Inquilino / Arrendatário (Sem Acesso Financeiro)",
+    badgeColor: "bg-amber-500/20 text-amber-400 border-amber-500/30"
   }
 };
 
@@ -261,3 +269,22 @@ export function validateRoleAccess(role: UserRole, targetTab: string): { allowed
   return { allowed: false, redirectTab: config.defaultTab || "painel" };
 }
 
+// Check if a specific tab is allowed for a user role
+export function isTabAllowedForRole(role: string, targetTab: string): boolean {
+  const normalizedRole = role === "GESTOR" ? "EMPRESA_GESTORA" : role;
+  if (normalizedRole === "ADMIN" || normalizedRole === "EMPRESA_GESTORA") {
+    return true;
+  }
+  const config = RoleNavigationMap[normalizedRole as UserRole];
+  if (!config) return false;
+  return config.allowedTabs.includes("*") || config.allowedTabs.includes(targetTab);
+}
+
+// Check if any subtab within a menu is allowed for a user role
+export function isMenuAllowedForRole(role: string, tabsInMenu: string[]): boolean {
+  const normalizedRole = role === "GESTOR" ? "EMPRESA_GESTORA" : role;
+  if (normalizedRole === "ADMIN" || normalizedRole === "EMPRESA_GESTORA") {
+    return true;
+  }
+  return tabsInMenu.some((tab) => isTabAllowedForRole(role, tab));
+}

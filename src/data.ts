@@ -1,4 +1,4 @@
-import { Predio, Conta, Fornecedor, Fracao, Aviso, Movimento, Reuniao, Documento, Ocorrencia } from "./types";
+import { Predio, Conta, Fornecedor, Fracao, Aviso, Movimento, Reuniao, Documento, Ocorrencia, GestorCarteira, EmpresaGestoraConfig } from "./types";
 
 export const cpLookup: Record<string, string> = {
   "2840-124": "Seixal",
@@ -22,6 +22,8 @@ export const initialPredios: Predio[] = [
     localidade: "Seixal",
     nif: "900123456",
     iban: "PT50 0035 0123 4567 8901 2344 5",
+    email: "edificio.estrela@condomanager.pt",
+    autoresponder_ativo: true,
     patrimonio: {
       tem_elevador: true,
       num_elevadores: 2,
@@ -954,3 +956,42 @@ export const initialOcorrencias: Ocorrencia[] = [
   }
 ];
 
+export const initialGestoresCarteira: GestorCarteira[] = [
+  {
+    id_gestor: "gestor-1",
+    nome: "Dra. Filipa Vasconcelos",
+    tlm: "912 345 678",
+    email: "filipa.v@gestaoforte.pt",
+    predios_atribuidos: ["predio-1"],
+    perfil: "GESTOR",
+    status_acesso: "ATIVO",
+    password_provisoria: "GestorForte2026!",
+    email_boas_vindas_enviado: true,
+    data_atribuicao: "2026-01-15",
+    foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80"
+  },
+  {
+    id_gestor: "gestor-2",
+    nome: "Carlos Lima",
+    tlm: "912 876 543",
+    email: "carlos.l@gestaoforte.pt",
+    predios_atribuidos: ["predio-1"],
+    perfil: "ADMIN",
+    status_acesso: "ATIVO",
+    password_provisoria: "AdminLima2026!",
+    email_boas_vindas_enviado: true,
+    data_atribuicao: "2026-02-01",
+    foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=80"
+  }
+];
+
+export const initialEmpresaGestoraConfig: EmpresaGestoraConfig = {
+  nome_empresa: "Gestão Forte Administrações Lda",
+  nif: "509483726",
+  email_corporativo: "contacto@gestaoforte.pt",
+  telefone: "210 987 654",
+  website: "https://www.gestaoforte.pt",
+  email_autoresponder_principal: "CONDOMINIO", // Padrão: E-mail do condomínio para personalização local
+  email_gestao_ia: "CONDOMINIO", // Padrão: E-mail do condomínio para triagem inteligente
+  gestores: initialGestoresCarteira
+};

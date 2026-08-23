@@ -1685,4 +1685,3 @@ export function FinanceiroAvancado({
     </div>
   );
 }
-

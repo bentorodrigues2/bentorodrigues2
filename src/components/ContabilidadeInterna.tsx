@@ -595,4 +595,3 @@ export function ContabilidadeInterna({ predio, loggedUser, movimentos = [] }: Co
     </div>
   );
 }
-

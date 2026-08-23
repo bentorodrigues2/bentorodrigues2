@@ -243,6 +243,90 @@ export async function uploadDocumentoToStorage(file: File, path: string): Promis
 }
 
 // ============================================================================
+// PERFIS DE UTILIZADOR & AUTENTICAÇÃO SUPABASE (ÁREA PESSOAL)
+// ============================================================================
+
+export interface SupabaseUserProfile {
+  id: string;
+  email: string;
+  nome: string;
+  role: "ADMIN" | "GESTOR" | "EMPRESA_GESTORA" | "USER" | "TECNICO" | "LIMPEZAS" | "CONTABILISTA" | "JURIDICO" | "AUDITOR";
+  telefone?: string;
+  nif?: string;
+  fracao?: string;
+  id_predio?: string;
+  foto_url?: string;
+  ultimo_acesso?: string;
+  ativo?: boolean;
+}
+
+export async function fetchUserProfile(userId: string): Promise<SupabaseUserProfile | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.warn("[Supabase Profiles] Error fetching profile:", error.message);
+      return null;
+    }
+    return data as SupabaseUserProfile;
+  } catch (err) {
+    console.warn("[Supabase Profiles] Exception:", err);
+    return null;
+  }
+}
+
+export async function updateUserProfile(
+  userId: string, 
+  updates: Partial<SupabaseUserProfile>
+): Promise<{ success: boolean; data?: SupabaseUserProfile; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: "Supabase não configurado" };
+  }
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data: data as SupabaseUserProfile };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Erro desconhecido" };
+  }
+}
+
+export async function fetchAllProfiles(): Promise<SupabaseUserProfile[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("[Supabase Profiles] Error fetching all:", error.message);
+      return [];
+    }
+    return (data || []) as SupabaseUserProfile[];
+  } catch (err) {
+    console.warn("[Supabase Profiles] Exception:", err);
+    return [];
+  }
+}
+
+// ============================================================================
 // SEED INICIAL DE DADOS PARA O SUPABASE
 // ============================================================================
 
@@ -280,4 +364,3 @@ export async function seedInitialDataToSupabase(
     return { success: false, message: `Erro ao sincronizar: ${err?.message || err}` };
   }
 }
-

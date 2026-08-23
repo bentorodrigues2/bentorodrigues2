@@ -34,7 +34,7 @@ import { SendingReactionModal } from "./SendingReactionModal";
 import { AuditoriaInterna } from "./AuditoriaInterna";
 import { GestaoFornecedores } from "./GestaoFornecedores";
 import { PortalOrcamentos } from "./PortalOrcamentos";
-// import removido — authService.ts não existe
+import { validatePasswordPolicy, createSecurityLog, INITIAL_USER_SECURITY, UserSecurityState } from "../lib/authSecurity";
 import { createNewSession } from "../lib/sessionManager";
 import { SecurityAuditModal } from "./SecurityAuditModal";
 import { ConfiguracoesAdministracao } from "./ConfiguracoesAdministracao";
@@ -80,7 +80,8 @@ import {
 import { motion } from "motion/react";
 import { formatDatePT, DEMO_ACCOUNTS_MAP, resolveUserByEmail } from "../utils";
 import PWACondominoView from "./PWACondominoView";
-const condoLogo = "/marca/20-Logotipo Horizontal com fundo.png";
+import { DraggableAIFloatingButton } from "./DraggableAIFloatingButton";
+const condoLogo = "/marca/02-versao-horizontal.png";
 const logoutIcon = "/estados-acoes/17-desligar.png";
 const terminarSessaoIcon = "/estados-acoes/16-terminar-sessao.png";
 const condomanagerLogo = condoLogo;
@@ -191,7 +192,7 @@ export function PWASimulator({
               cooldownPassed: true,
             }
           }));
-// linha removida — função inexistente
+          createSecurityLog(pwaResetEmail, "BOT_CHALLENGE_PASSED", "PWA Cooldown de 1 minuto terminado. Concedidas 3 tentativas pÃ³s-bloqueio.");
         }
       }, 1000);
       return () => clearInterval(interval);
@@ -3298,7 +3299,7 @@ export function PWASimulator({
                 const email = account.email;
 
                 // Success
-// linha removida — função inexistente
+                createSecurityLog(email, "LOGIN_SUCCESS", `PWA Login bem-sucedido (${role} - ${nome}).`);
                 setPwaSecurityMap(prev => ({
                   ...prev,
                   [email]: {
@@ -3325,7 +3326,7 @@ export function PWASimulator({
               const handlePwaFailedAttempt = () => {
                 if (pwaSec.cooldownPassed) {
                   const nextPost = pwaSec.postCooldownAttempts + 1;
-// linha removida — função inexistente
+                  createSecurityLog(pwaResetEmail, "LOGIN_FAILED", `PWA Falha pÃ³s-cooldown (${nextPost}/3).`);
 
                   if (nextPost >= 3) {
                     setPwaSecurityMap(prev => ({
@@ -3337,7 +3338,7 @@ export function PWASimulator({
                         mustResetPassword: true,
                       }
                     }));
-// linha removida — função inexistente
+                    createSecurityLog(pwaResetEmail, "ACCOUNT_LOCKED_BRUTE_FORCE", "PWA Conta BLOQUEADA por brute force. E-mail de redefiniÃ§Ã£o enviado!");
                     setPwaErrorMessage("ðŸ›‘ CONTA BLOQUEADA: RedefiniÃ§Ã£o de palavra-passe enviada por e-mail!");
                     setPwaResetMode(true);
                     setPwaResetSent(true);
@@ -3355,7 +3356,7 @@ export function PWASimulator({
                 }
 
                 const nextFail = pwaSec.failedAttempts + 1;
-// linha removida — função inexistente
+                createSecurityLog(pwaResetEmail, "LOGIN_FAILED", `PWA Falha de login (${nextFail}/5).`);
 
                 if (nextFail >= 5) {
                   const cooldownUntil = Date.now() + 60000;
@@ -3367,7 +3368,7 @@ export function PWASimulator({
                       cooldownUntil,
                     }
                   }));
-// linha removida — função inexistente
+                  createSecurityLog(pwaResetEmail, "COOLDOWN_ACTIVATED", "PWA 5 falhas consecutivas. Bloqueio de 1 min ativado.");
                   setPwaErrorMessage("ðŸ”’ 5 tentativas falhadas! Bloqueado por 1 minuto.");
                 } else {
                   setPwaSecurityMap(prev => ({
@@ -3412,7 +3413,7 @@ export function PWASimulator({
                   }
                 }));
 
-// linha removida — função inexistente
+                createSecurityLog(pwaResetEmail, "PASSWORD_RESET_SUCCESS", "PWA Palavra-passe redefinida com sucesso. Conta desbloqueada!");
                 alert("âœ… Palavra-passe redefinida com sucesso!");
                 setPwaResetMode(false);
                 setPwaResetSent(false);
@@ -3545,7 +3546,7 @@ export function PWASimulator({
                                   alert("Por favor introduza o seu e-mail!");
                                   return;
                                 }
-// linha removida — função inexistente
+                                createSecurityLog(pwaResetEmail, "PASSWORD_RESET_REQUESTED", "PWA Pedido de redefiniÃ§Ã£o e desbloqueio de palavra-passe enviado.");
                                 setPwaResetSent(true);
                               }}
                               className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-2 rounded-lg text-center text-[10px] tracking-wider uppercase cursor-pointer transition-all shadow-md"
@@ -3726,6 +3727,14 @@ export function PWASimulator({
               );
             })()}
 
+            {/* FLOATING DRAGGABLE AI ASSISTANT FOR ADMIN & GESTOR (MOBILE VIEW) */}
+            <DraggableAIFloatingButton
+              loggedUser={loggedUser}
+              predio={predio}
+              isPWA={true}
+              className="!absolute !bottom-16 !right-3"
+            />
+
           </div>
         </div>
       </div>
@@ -3770,4 +3779,3 @@ export function PWASimulator({
     </div>
   );
 }
-
