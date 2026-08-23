@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 2. Get message details
     const msgRes = await gmail.users.messages.get({
       userId: "me",
-      id: msg.id
+      id: msg.id!
     });
 
     const payload = msgRes.data.payload;
@@ -46,11 +46,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? Buffer.from(payload.parts[0].body.data, "base64").toString("utf8")
         : "";
 
-    // 3. Mark email as read (CORREÇÃO DO ERRO TS2769)
-  await gmail.users.messages.modify({
-  userId: "me",
-  id: msg.id,
-  requestBody: {
-    removeLabelIds: ["UNREAD"]
+    // 3. Mark email as read
+    await gmail.users.messages.modify({
+      userId: "me",
+      id: msg.id!,
+      requestBody: {
+        removeLabelIds: ["UNREAD"]
+      }
+    });
+
+    return res.status(200).json({ ok: true, subject, from, body });
+
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || "Internal Server Error" });
   }
-});
+}
