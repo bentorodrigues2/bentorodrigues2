@@ -1,5 +1,11 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
-  ]
+  "version": 2,
+  "functions": {
+    "api/gmail-reader.ts": {
+      "runtime": "nodejs18.x"
+    },
+    "api/autoresponder.ts": {
+      "runtime": "nodejs18.x"
+    }
+  }
 }
