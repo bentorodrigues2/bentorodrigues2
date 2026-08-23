@@ -45,7 +45,7 @@ export default async function handler(req, res) {
 
       const payload = full.data.payload;
 
-      // Extrair corpo do email (robusto)
+      // Extrair corpo do email
       let body = "";
       if (payload.parts) {
         const part = payload.parts.find(p => p.mimeType === "text/plain");
