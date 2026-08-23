@@ -47,8 +47,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         : "";
 
     // 3. Mark email as read (CORREÇÃO DO ERRO TS2769)
-    await gmail.users.messages.modify({
+await gmail.users.messages.modify({
   userId: "me",
   id: msg.id,
-  removeLabelIds: ["UNREAD"]
+  requestBody: {
+    removeLabelIds: ["UNREAD"]
+  }
 });
+
