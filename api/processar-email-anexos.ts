@@ -3,7 +3,7 @@ import { supabase } from "./lib/supabaseClient.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "MÈtodo n„o permitido" });
+    return res.status(405).json({ error: "M√©todo n√£o permitido" });
   }
 
   const {
@@ -21,19 +21,19 @@ export default async function handler(req, res) {
       model: "gemini-1.5-flash",
     });
 
-    const prompt = \
+    const prompt = `
 Analisa o email abaixo e os anexos.
 Gera:
 1) Tipo de documento (comprovativo, avaria, outro)
-2) Dados extraÌdos
-3) Resposta autom·tica formal para o condÛmino
+2) Dados extra√≠dos
+3) Resposta autom√°tica formal para o cond√≥mino
 
 Email:
-Remetente: \
-Destinat·rio: \
-Assunto: \
-Corpo: \
-    \;
+Remetente: ${remetenteEmail}
+Destinat√°rio: ${destinatarioEmail}
+Assunto: ${assunto}
+Corpo: ${corpoTexto}
+    `;
 
     const respostaGemini = await modelo.generateContent(prompt);
     const textoGerado = respostaGemini.response.text();
