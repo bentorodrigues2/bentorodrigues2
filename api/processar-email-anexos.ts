@@ -1,37 +1,58 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { supabase } from "../src/lib/supabaseClient";
+import { supabase } from "./lib/supabaseClient";
 
-export async function processarEmailComAnexos(
-  remetenteEmail: string,
-  destinatarioEmail: string,
-  assunto: string,
-  corpoTexto: string,
-  anexos: any[]
-) {
-  const client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "MÈtodo n„o permitido" });
+  }
 
-  const modelo = client.getGenerativeModel({
-    model: "gemini-1.5-flash",
-  });
+  const {
+    remetenteEmail,
+    destinatarioEmail,
+    assunto,
+    corpoTexto,
+    anexos
+  } = req.body;
 
-  const prompt = `
+  try {
+    const client = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+    const modelo = client.getGenerativeModel({
+      model: "gemini-1.5-flash",
+    });
+
+    const prompt = 
 Analisa o email abaixo e os anexos.
 Gera:
 1) Tipo de documento (comprovativo, avaria, outro)
-2) Dados extra√≠dos
-3) Resposta autom√°tica formal para o cond√≥mino
-`;
+2) Dados extraÌdos
+3) Resposta autom·tica formal para o condÛmino
 
-  const respostaGemini = await modelo.generateContent(prompt);
-  const textoGerado = respostaGemini.response.text();
+Email:
+Remetente: 
+Destinat·rio: 
+Assunto: 
+Corpo: 
+    ;
 
-  await supabase.from("mensagens_recebidas").insert({
-    remetente: remetenteEmail,
-    destinatario: destinatarioEmail,
-    assunto,
-    corpo: corpoTexto,
-    resposta_gerada: textoGerado,
-  });
+    const respostaGemini = await modelo.generateContent(prompt);
+    const textoGerado = respostaGemini.response.text();
 
-  return textoGerado;
+    await supabase.from("mensagens_recebidas").insert({
+      remetente: remetenteEmail,
+      destinatario: destinatarioEmail,
+      assunto,
+      corpo: corpoTexto,
+      resposta_gerada: textoGerado,
+    });
+
+    return res.status(200).json({
+      sucesso: true,
+      resposta: textoGerado,
+    });
+
+  } catch (erro) {
+    console.error("Erro ao processar email:", erro);
+    return res.status(500).json({ erro: "Erro interno ao processar email" });
+  }
 }
