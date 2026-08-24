@@ -13,7 +13,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { from, to, subject, text } = req.body;
 
-    // Guardar no Supabase
     const { data, error } = await supabase
       .from("mensagens_recebidas")
       .insert({
@@ -28,7 +27,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error) throw error;
 
-    // Chamar função IA no Supabase
     const autoresp = await fetch(`${SUPABASE_URL}/functions/v1/autoresponder-ia`, {
       method: "POST",
       headers: {
@@ -44,7 +42,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const respostaIA = await autoresp.json();
 
-    // Enviar email via Resend
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -60,7 +57,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     });
 
-    // Atualizar Supabase
     await supabase
       .from("mensagens_recebidas")
       .update({
