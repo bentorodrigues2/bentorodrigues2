@@ -1,4 +1,4 @@
-import { getGmailClient, listUnreadEmails, getEmailContent } from "./emailRouter";
+import { getGmailClient, listUnreadEmails, getEmailContent } from "./emailRouter.js";
 
 export default async function handler(req, res) {
   try {
