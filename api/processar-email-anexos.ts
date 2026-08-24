@@ -1,5 +1,5 @@
-Ôªøimport { GoogleGenerativeAI } from "@google/genai";
-import { supabase } from "../backend/supabaseClient";
+import { GoogleGenerativeAI } from "@google/genai";
+import { supabase } from "../src/lib/supabaseClient";
 
 export async function processarEmailComAnexos(
   remetenteEmail: string,
@@ -15,8 +15,8 @@ export async function processarEmailComAnexos(
 Analisa o email abaixo e os anexos.
 Gera:
 1) Tipo de documento (comprovativo, avaria, outro)
-2) Dados extra√≠dos
-3) Resposta autom√°tica formal para o cond√≥mino
+2) Dados extraÌdos
+3) Resposta autom·tica formal para o condÛmino
 `;
 
   const respostaGemini = await modelo.generateContent([
