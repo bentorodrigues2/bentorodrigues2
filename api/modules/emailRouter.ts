@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+﻿import axios from "axios";
 
 export async function encaminharEmailParaAutoresponder(
   remetenteEmail: string,
@@ -8,23 +8,20 @@ export async function encaminharEmailParaAutoresponder(
   anexos: any[]
 ) {
   try {
-    const payload = {
-      remetenteEmail,
-      destinatarioEmail,
-      assunto,
-      corpoTexto,
-      anexos
-    };
-
-    const response = await axios.post(
-      \\/api/processar-email-anexos\,
-      payload,
-      { timeout: 20000 }
+    const resposta = await axios.post(
+      "https://bentorodrigues2.vercel.app/api/autoresponder",
+      {
+        remetenteEmail,
+        destinatarioEmail,
+        assunto,
+        corpoTexto,
+        anexos,
+      }
     );
 
-    return response.data;
-  } catch (error: any) {
-    console.error("Erro ao encaminhar para autoresponder:", error.message);
-    throw new Error(error.message);
+    return resposta.data;
+  } catch (erro) {
+    console.error("Erro ao encaminhar para autoresponder:", erro);
+    throw erro;
   }
 }
