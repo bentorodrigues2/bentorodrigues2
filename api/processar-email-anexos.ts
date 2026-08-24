@@ -1,4 +1,4 @@
-import { GoogleAIClient } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabase } from "../src/lib/supabaseClient";
 
 export async function processarEmailComAnexos(
@@ -8,7 +8,7 @@ export async function processarEmailComAnexos(
   corpoTexto: string,
   anexos: any[]
 ) {
-  const genAI = new GoogleAIClient(process.env.GEMINI_API_KEY!);
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   const modelo = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `
