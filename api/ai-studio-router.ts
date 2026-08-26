@@ -32,7 +32,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ erro: "Erro no AI Studio" });
   }
 }
-
-// AUTO-LOADED SYSTEM PROMPT
-import fs from 'fs';
-const systemPrompt = fs.readFileSync('./aistudio/system-prompt.txt', 'utf8');
