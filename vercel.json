@@ -15,10 +15,6 @@
     {
       "path": "/api/enviar-aniversarios",
       "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/gmail-reader",
-      "schedule": "*/2 * * * *"
     }
   ]
 }
