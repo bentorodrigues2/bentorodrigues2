@@ -1,6 +1,37 @@
 import { google } from "googleapis";
 import axios from "axios";
 
+function extractBody(payload) {
+  // 1. Se existir text/plain direto
+  const plain = payload.parts?.find(p => p.mimeType === "text/plain");
+  if (plain?.body?.data) {
+    return Buffer.from(plain.body.data, "base64").toString("utf8");
+  }
+
+  // 2. Se existir text/html direto
+  const html = payload.parts?.find(p => p.mimeType === "text/html");
+  if (html?.body?.data) {
+    return Buffer.from(html.body.data, "base64").toString("utf8");
+  }
+
+  // 3. Se existir multipart/alternative
+  const alt = payload.parts?.find(p => p.mimeType === "multipart/alternative");
+  if (alt?.parts) {
+    const altPlain = alt.parts.find(p => p.mimeType === "text/plain");
+    if (altPlain?.body?.data) {
+      return Buffer.from(altPlain.body.data, "base64").toString("utf8");
+    }
+
+    const altHtml = alt.parts.find(p => p.mimeType === "text/html");
+    if (altHtml?.body?.data) {
+      return Buffer.from(altHtml.body.data, "base64").toString("utf8");
+    }
+  }
+
+  // 4. Último recurso: snippet
+  return payload.snippet || "";
+}
+
 export default async function handler(req, res) {
   try {
     const oauth2Client = new google.auth.OAuth2(
@@ -38,10 +69,7 @@ export default async function handler(req, res) {
         subject: full.data.payload.headers.find(h => h.name === "Subject")?.value || "",
         date: full.data.payload.headers.find(h => h.name === "Date")?.value || "",
         snippet: full.data.snippet || "",
-        body: Buffer.from(
-          full.data.payload.parts?.find(p => p.mimeType === "text/plain")?.body?.data || "",
-          "base64"
-        ).toString("utf8")
+        body: extractBody(full.data.payload)
       };
 
       const aiResponse = await axios.post(
