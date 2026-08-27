@@ -1,6 +1,6 @@
 import axios from "axios";
 
-async function callGeminiWithRetry(payload, retries = 4, delay = 500) {
+async function callGeminiWithRetry(payload, retries = 5, delay = 1500) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const response = await axios.post(
@@ -11,7 +11,7 @@ async function callGeminiWithRetry(payload, retries = 4, delay = 500) {
             "Content-Type": "application/json",
             "x-goog-api-key": process.env.AI_STUDIO_API_KEY
           },
-          timeout: 15000
+          timeout: 30000
         }
       );
 
