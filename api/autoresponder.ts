@@ -1,3 +1,8 @@
+import axios from "axios";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 export default async function handler(req, res) {
   try {
     const { aiResponse, email } = req.body;
@@ -12,8 +17,8 @@ export default async function handler(req, res) {
       return res.status(200).json({ enviado: false });
     }
 
-    // Enviar email autom·tico
-    await sendEmail({
+    await resend.emails.send({
+      from: "Condom√≠nio <no-reply@condomanager.ai>",
       to: email.from,
       subject: resposta.assunto,
       html: resposta.corpoTexto
