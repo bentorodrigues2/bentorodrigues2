@@ -1,27 +1,42 @@
+import axios from "axios";
+
 async function chamarGeminiComRetry(payload: any, retries = 3, delayMs = 3000) {
   try {
     return await axios.post(
-      process.env.AI_STUDIO_MODEL_URL,
+      process.env.AI_STUDIO_MODEL_URL!,
       payload,
-      { headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY } }
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY!
+        }
+      }
     );
   } catch (error: any) {
-    if ((error.response?.status === 429 || error.response?.status === 503) && retries > 0) {
-      console.warn(\[AI Studio] Limite atingido. Aguardar \ms...\);
+    const status = error.response?.status;
+
+    if ((status === 429 || status === 503) && retries > 0) {
+      console.warn(`AI Studio: limite atingido. Aguardar ${delayMs}ms...`);
       await new Promise(resolve => setTimeout(resolve, delayMs));
       return chamarGeminiComRetry(payload, retries - 1, delayMs * 2);
     }
-    console.warn("[AI Studio] Fallback para gemini-1.5-flash");
+
+    console.warn("AI Studio indisponível. Fallback para gemini-1.5-flash.");
+
     return await axios.post(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
       payload,
-      { headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY } }
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY!
+        }
+      }
     );
   }
 }
-import axios from "axios";
 
-export default async function handler(req, res) {
+export default async function handler(req: any, res: any) {
   try {
     const { email } = req.body;
 
@@ -53,23 +68,12 @@ export default async function handler(req, res) {
       ]
     };
 
-    const response = await axios.post(
-      process.env.AI_STUDIO_MODEL_URL,
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": process.env.AI_STUDIO_API_KEY
-        }
-      }
-    );
+    const result = await chamarGeminiComRetry(payload);
 
-    return res.status(200).json(response.data);
+    return res.status(200).json(result.data);
 
-  } catch (e) {
+  } catch (e: any) {
     console.error("Erro no AI Studio:", e);
     return res.status(500).json({ erro: "Erro no AI Studio", detalhe: e.message });
   }
 }
-
-
