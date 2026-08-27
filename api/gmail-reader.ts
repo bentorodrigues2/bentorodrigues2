@@ -1,94 +1,46 @@
-import { google } from "googleapis";
 import axios from "axios";
-
-function extractBody(payload) {
-  // 1. Se existir text/plain direto
-  const plain = payload.parts?.find(p => p.mimeType === "text/plain");
-  if (plain?.body?.data) {
-    return Buffer.from(plain.body.data, "base64").toString("utf8");
-  }
-
-  // 2. Se existir text/html direto
-  const html = payload.parts?.find(p => p.mimeType === "text/html");
-  if (html?.body?.data) {
-    return Buffer.from(html.body.data, "base64").toString("utf8");
-  }
-
-  // 3. Se existir multipart/alternative
-  const alt = payload.parts?.find(p => p.mimeType === "multipart/alternative");
-  if (alt?.parts) {
-    const altPlain = alt.parts.find(p => p.mimeType === "text/plain");
-    if (altPlain?.body?.data) {
-      return Buffer.from(altPlain.body.data, "base64").toString("utf8");
-    }
-
-    const altHtml = alt.parts.find(p => p.mimeType === "text/html");
-    if (altHtml?.body?.data) {
-      return Buffer.from(altHtml.body.data, "base64").toString("utf8");
-    }
-  }
-
-  // 4. Último recurso: snippet
-  return payload.snippet || "";
-}
+import { google } from "googleapis";
 
 export default async function handler(req, res) {
   try {
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GMAIL_OAUTH_CLIENT_ID,
-      process.env.GMAIL_OAUTH_CLIENT_SECRET,
-      process.env.GMAIL_OAUTH_REDIRECT
-    );
-
-    oauth2Client.setCredentials({
-      refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+    const auth = new google.auth.GoogleAuth({
+      credentials: {
+        client_email: process.env.GMAIL_CLIENT_EMAIL,
+        private_key: process.env.GMAIL_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      },
+      scopes: ["https://mail.google.com/"],
     });
 
-    const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+    const gmail = google.gmail({ version: "v1", auth });
 
-    const list = await gmail.users.messages.list({
-      userId: "me",
-      q: "is:unread",
-      maxResults: 10,
-    });
+    const messages = await obterEmails(gmail);
 
-    const messages = list.data.messages || [];
+    for (const msg of messages) {
+      await processarEmail(msg);
 
-    const baseUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-
-    for (const msg of messages) { Start-Sleep -Seconds 3
-      const full = await gmail.users.messages.get({
-        userId: "me",
-        id: msg.id,
-        format: "full",
-      });
-
-      const email = {
-        id: msg.id,
-        from: full.data.payload.headers.find(h => h.name === "From")?.value || "",
-        subject: full.data.payload.headers.find(h => h.name === "Subject")?.value || "",
-        date: full.data.payload.headers.find(h => h.name === "Date")?.value || "",
-        snippet: full.data.snippet || "",
-        body: extractBody(full.data.payload)
-      };
-
-      const aiResponse = await axios.post(
-        `${baseUrl}/api/ai-studio-router`,
-        { email }
-      );
-
-      await axios.post(
-        `${baseUrl}/api/autoresponder`,
-        { aiResponse: aiResponse.data, email }
-      );
+      // Delay de 3 segundos entre emails (CORRETO)
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
 
-    return res.status(200).json({ ok: true });
-
-  } catch (e) {
-    console.error("Erro gmail-reader:", e);
-    return res.status(500).json({ erro: "Erro gmail-reader", detalhe: e.message });
+    res.status(200).json({ status: "ok" });
+  } catch (error) {
+    console.error("Erro no gmail-reader:", error);
+    res.status(500).json({ error: "Erro no gmail-reader" });
   }
 }
 
+async function obterEmails(gmail) {
+  const res = await gmail.users.messages.list({
+    userId: "me",
+    q: "is:unread",
+  });
 
+  return res.data.messages || [];
+}
+
+async function processarEmail(msg) {
+  await axios.post(
+    `${process.env.VERCEL_URL}/api/autoresponder`,
+    { id: msg.id }
+  );
+}
