@@ -20,3 +20,4 @@ export default async function handler(req, res) {
 
   res.send('Gmail ligado com sucesso.');
 }
+

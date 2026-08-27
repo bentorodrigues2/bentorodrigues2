@@ -107,3 +107,4 @@ self.addEventListener("sync", (event) => {
     );
   }
 });
+

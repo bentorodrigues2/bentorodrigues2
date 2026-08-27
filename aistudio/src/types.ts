@@ -278,3 +278,4 @@ export interface AuditLogEntry {
   dispositivo?: string;
 }
 
+

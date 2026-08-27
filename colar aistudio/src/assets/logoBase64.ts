@@ -66,3 +66,4 @@ if (typeof window !== "undefined") {
   getLogoHorizontalBase64().catch(() => {});
   getWatermarkBase64().catch(() => {});
 }
+

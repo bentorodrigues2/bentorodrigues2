@@ -29,3 +29,4 @@ export async function getEmailContent(gmail, messageId) {
 
   return res.data;
 }
+

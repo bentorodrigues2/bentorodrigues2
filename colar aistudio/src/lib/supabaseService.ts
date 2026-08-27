@@ -364,3 +364,4 @@ export async function seedInitialDataToSupabase(
     return { success: false, message: `Erro ao sincronizar: ${err?.message || err}` };
   }
 }
+

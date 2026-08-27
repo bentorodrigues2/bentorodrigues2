@@ -231,7 +231,7 @@ ${fileContent?.substring(0, 500) || "Fatura de fornecedor para condomínio, NIF 
 Extraia NIF do fornecedor, valor total, valor do IVA, data da fatura, IBAN para pagamento e descrição dos produtos/serviços.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -325,7 +325,7 @@ Para cada pagamento detetado, retorne um objeto estruturado no seguinte formato 
 Seja preciso. Se não conseguir identificar a fração ou aviso com certeza, retorne a fração_sugerida como nulo e avisos_associados vazio. Use apenas o formato JSON indicado.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -451,7 +451,7 @@ ${votacoesDetalhadas ? `\nDETALHE DAS VOTAÇÕES APRESENTADAS:\n${JSON.stringify
 Gera o texto completo da ata, com todas as secções estruturadas e vocabulário jurídico formal português (PT-PT).`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
@@ -499,7 +499,7 @@ ${JSON.stringify(atraso, null, 2)}
 Produz uma minuta jurídica completa pronta para envio em correio registado com aviso de receção.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
@@ -556,7 +556,7 @@ ${JSON.stringify(movements, null, 2)}
 Faz uma análise de cruzamento, considerando que o fundo de reserva comum é alimentado mensalmente e sofre despesas de conservação. Desenha a projeção mensal para os próximos 12 meses (começando no mês de Julho de 2026), identifica riscos de descida abaixo de 10% do orçamento anual (${orcamentoAnual * 0.10}€) e dá alertas preventivos e recomendações em português de Portugal (PT-PT).`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
@@ -619,7 +619,7 @@ ${JSON.stringify(proposals, null, 2)}
 Faz a análise comparativa de forma extremamente rigorosa.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
@@ -653,7 +653,7 @@ Analisa o texto fornecido (que pode ser uma cópia de um PDF, tabela Excel, e-ma
 Retorna os dados EXCLUSIVAMENTE em formato JSON estruturado respeitando o schema definido. Se faltarem informações críticas (como NIF, e-mail, telemóvel), deixa esses campos vazios ("") no JSON, mas garante que os identificas. Não adiciones comentários fora do JSON.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: `Extraia as informações do seguinte documento de condomínio para importação global:\n\n${textContent}`,
       config: {
         systemInstruction: systemInstruction,
@@ -819,7 +819,7 @@ ${JSON.stringify(avisos?.slice(0, 20), null, 2)}
 Calcula e projeta o orçamento anual ideal automático para este edifício. Dá sugestões automáticas de quota mensal (mínima, recomendada, ideal, extraordinária) e uma sugestão automatizada de quotas extraordinárias com fracionamento obrigatório em 3, 6, 9, 12, 18, 24 meses sob a referência BR23E. Por fim, desenha 12 meses de projeções financeiras completas para compor o painel gráfico.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
@@ -957,7 +957,7 @@ Dados/Base64 recebidos:
 ${fileBase64 ? fileBase64.substring(0, 1000) : fileName}`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         systemInstruction,
@@ -1106,7 +1106,7 @@ Diretrizes de redação:
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
+      model: "gemini-2.5-flash",
       contents,
       config,
     });
@@ -1221,7 +1221,7 @@ Gera o texto integral do documento formatado, pronto para ser copiado ou exporta
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.7-flash",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config,
     });
@@ -1279,3 +1279,4 @@ async function setupVite() {
 }
 
 setupVite();
+

@@ -1,4 +1,4 @@
-ï»¿import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { AnexoProcessado, AnaliseDocumentoIA } from './anexosParser';
 
 const supabase = createClient(
@@ -46,7 +46,7 @@ export async function arquivarEIntegrarNoSupabase(
         : analise.tipoDocumento === 'FATURA_DESPESA'
         ? 'Faturas'
         : analise.tipoDocumento === 'OCORRENCIA_FOTO'
-        ? 'Vistorias/OcorrÃªncias'
+        ? 'Vistorias/Ocorrências'
         : 'Geral',
     ano: new Date().getFullYear(),
     data_carregamento: new Date().toISOString().split('T')[0],
@@ -61,10 +61,10 @@ export async function arquivarEIntegrarNoSupabase(
       id_predio: idPredio,
       data: analise.dataDocumento || new Date().toISOString().split('T')[0],
       tipo: 'Receita',
-      categoria: 'Quotas de CondomÃ­nio',
+      categoria: 'Quotas de Condomínio',
       descricao: Pagamento recebido []: ,
       valor: analise.valorDetetado,
-      forma_pagamento: 'TransferÃªncia BancÃ¡ria',
+      forma_pagamento: 'Transferência Bancária',
       documento_suporte_url: fileUrl,
       conciliado_banco: false
     });
@@ -85,3 +85,4 @@ export async function arquivarEIntegrarNoSupabase(
 
   return { idDocumento, fileUrl };
 }
+

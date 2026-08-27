@@ -56,7 +56,7 @@ export default async function handler(req, res) {
 
     const baseUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
 
-    for (const msg of messages) {
+    for (const msg of messages) { Start-Sleep -Seconds 3
       const full = await gmail.users.messages.get({
         userId: "me",
         id: msg.id,
@@ -90,3 +90,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ erro: "Erro gmail-reader", detalhe: e.message });
   }
 }
+
+

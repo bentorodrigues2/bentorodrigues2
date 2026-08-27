@@ -1,17 +1,17 @@
-ï»¿import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 /**
- * ValidaÃ§Ã£o mÃ­nima da polÃ­tica de password.
+ * Validação mínima da política de password.
  * O AI Studio usa isto para validar password antes de enviar para o Supabase.
  */
 export function validatePasswordPolicy(password: string): boolean {
   if (!password) return false;
-  return password.length >= 6; // regra mÃ­nima por agora
+  return password.length >= 6; // regra mínima por agora
 }
 
 /**
- * CriaÃ§Ã£o de logs de seguranÃ§a.
- * O AI Studio chama isto sempre que hÃ¡ login, logout, falha, etc.
+ * Criação de logs de segurança.
+ * O AI Studio chama isto sempre que há login, logout, falha, etc.
  * Mais tarde podemos guardar isto numa tabela do Supabase.
  */
 export async function createSecurityLog(event: string, email?: string) {
@@ -34,7 +34,7 @@ export async function sendMagicLink(email: string) {
 }
 
 /**
- * Verificar OTP (AI Studio usa isto no login por cÃ³digo)
+ * Verificar OTP (AI Studio usa isto no login por código)
  */
 export async function verifyOtp(email: string, token: string) {
   const { data, error } = await supabase.auth.verifyOtp({
@@ -45,3 +45,4 @@ export async function verifyOtp(email: string, token: string) {
   if (error) throw error;
   return data;
 }
+

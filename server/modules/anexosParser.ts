@@ -1,4 +1,4 @@
-﻿export function analisarAnexos(anexos: any[]) {
+export function analisarAnexos(anexos: any[]) {
   const resultados = [];
 
   for (const anexo of anexos) {
@@ -11,3 +11,4 @@
 
   return resultados;
 }
+

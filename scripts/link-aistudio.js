@@ -64,3 +64,4 @@ if (!appContent.includes("Área Pessoal")) {
 console.log("\n=== AI STUDIO LIGADO COM SUCESSO ===");
 console.log("Agora /app abre o AI Studio completo.");
 console.log("Frontend intacto.");
+

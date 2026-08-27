@@ -9,3 +9,4 @@ export async function askAI(prompt: string) {
   return response.output_text;
 }
 
+

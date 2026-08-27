@@ -2,19 +2,20 @@
   "crons": [
     {
       "path": "/api/enviar-notas",
-      "schedule": "0 8 1 * *"
+      "schedule": "*/4 * * * *"
     },
     {
       "path": "/api/enviar-lembrete",
-      "schedule": "0 10 8 * *"
+      "schedule": "*/4 * * * *"
     },
     {
       "path": "/api/enviar-mora",
-      "schedule": "0 11 16 * *"
+      "schedule": "*/4 * * * *"
     },
     {
       "path": "/api/enviar-aniversarios",
-      "schedule": "0 9 * * *"
+      "schedule": "*/4 * * * *"
     }
   ]
 }
+

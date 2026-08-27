@@ -20,3 +20,4 @@ export function saveUserPreferences(preferences: NotificationPreferences): Notif
 
   return updatedPrefs;
 }
+

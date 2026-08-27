@@ -15,3 +15,4 @@ export async function getPredios() {
   return await supabase.from('predios').select('*');
 }
 
+

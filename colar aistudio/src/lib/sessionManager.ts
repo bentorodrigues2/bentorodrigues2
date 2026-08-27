@@ -288,3 +288,4 @@ export function isMenuAllowedForRole(role: string, tabsInMenu: string[]): boolea
   }
   return tabsInMenu.some((tab) => isTabAllowedForRole(role, tab));
 }
+

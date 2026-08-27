@@ -155,3 +155,4 @@ export function playVoiceNoteSimulation(durationSeconds: number = 3, onEnded?: (
     if (onEnded) setTimeout(onEnded, 1500);
   }
 }
+

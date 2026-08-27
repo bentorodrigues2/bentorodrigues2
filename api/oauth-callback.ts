@@ -16,3 +16,4 @@ export default async function handler(req, res) {
     access_token: tokens.access_token,
   });
 }
+

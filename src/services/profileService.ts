@@ -15,3 +15,4 @@ export async function updateProfile(userId, updates) {
     .eq('id', userId);
 }
 
+

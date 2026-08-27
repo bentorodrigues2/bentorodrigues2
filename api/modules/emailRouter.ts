@@ -25,3 +25,4 @@ export async function encaminharEmailParaAutoresponder(
     throw erro;
   }
 }
+

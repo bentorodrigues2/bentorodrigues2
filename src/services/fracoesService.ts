@@ -18,3 +18,4 @@ export async function updateProprietario(id_fracao, proprietario) {
     .eq('id_fracao', id_fracao);
 }
 
+

@@ -56,3 +56,4 @@ Corpo: ${corpoTexto}
     return res.status(500).json({ erro: "Erro interno ao processar email" });
   }
 }
+

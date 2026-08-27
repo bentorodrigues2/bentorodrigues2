@@ -995,3 +995,4 @@ export const initialEmpresaGestoraConfig: EmpresaGestoraConfig = {
   email_gestao_ia: "CONDOMINIO", // Padrão: E-mail do condomínio para triagem inteligente
   gestores: initialGestoresCarteira
 };
+
