@@ -1,21 +1,28 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export default async function handler(req, res) {
   try {
-    const { to, subject, body } = req.body;
+    const { aiResponse, email } = req.body;
 
-    await resend.emails.send({
-      from: "Condom√≠nio <no-reply@bentorodrigues2.pt>",
-      to,
-      subject,
-      html: body,
+    if (!aiResponse || !email) {
+      return res.status(400).json({ erro: "Falta dados" });
+    }
+
+    const resposta = aiResponse.respostaAutomaticaSugerida;
+
+    if (!resposta) {
+      return res.status(200).json({ enviado: false });
+    }
+
+    // Enviar email autom·tico
+    await sendEmail({
+      to: email.from,
+      subject: resposta.assunto,
+      html: resposta.corpoTexto
     });
 
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ enviado: true });
+
   } catch (e) {
-    console.error("Erro ao enviar email:", e);
-    return res.status(500).json({ erro: "Erro ao enviar email" });
+    console.error("Erro autoresponder:", e);
+    return res.status(500).json({ erro: "Erro autoresponder", detalhe: e.message });
   }
 }

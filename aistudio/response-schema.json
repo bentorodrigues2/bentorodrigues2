@@ -1,15 +1,34 @@
 {
-  "tipo_remetente": "string",
-  "intencao": "string",
-  "fracao_identificada": "string",
-  "dados_fiscais": {
-    "valor_total": "number",
-    "nif": "string",
-    "numero_documento": "string",
-    "iban": "string",
-    "datas_relevantes": "string"
+  "type": "object",
+  "properties": {
+    "tipo_remetente": { "type": "string" },
+    "intencao": { "type": "string" },
+    "fracao_identificada": { "type": ["string", "null"] },
+    "dados_fiscais": {
+      "type": "object",
+      "properties": {
+        "valor_total": { "type": ["number", "null"] },
+        "nif": { "type": ["string", "null"] },
+        "numero_documento": { "type": ["string", "null"] },
+        "iban": { "type": ["string", "null"] },
+        "data_documento": { "type": ["string", "null"] },
+        "fornecedor": { "type": ["string", "null"] },
+        "mes_referente": { "type": ["string", "null"] }
+      }
+    },
+    "acao_sistema": { "type": "string" },
+    "sendEmail": { "type": "boolean" },
+    "resposta_sugerida": { "type": "string" },
+    "subject": { "type": "string" },
+    "body": { "type": "string" },
+    "anexosTexto": { "type": ["string", "null"] }
   },
-  "acao_sistema": "string",
-  "sendEmail": "boolean",
-  "resposta_sugerida": "string"
+  "required": [
+    "tipo_remetente",
+    "intencao",
+    "acao_sistema",
+    "sendEmail",
+    "subject",
+    "body"
+  ]
 }
