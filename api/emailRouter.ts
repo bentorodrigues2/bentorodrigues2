@@ -3,14 +3,13 @@ import { google } from "googleapis";
 export async function getGmailClient() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
-      client_email: process.env.GMAIL_CLIENT_ID,
-      private_key: process.env.GMAIL_CLIENT_SECRET?.replace(/\\n/g, "\n"),
+      client_email: process.env.GMAIL_CLIENT_EMAIL,
+      private_key: process.env.GMAIL_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     },
     scopes: ["https://www.googleapis.com/auth/gmail.readonly"],
   });
 
-  const gmail = google.gmail({ version: "v1", auth });
-  return gmail;
+  return google.gmail({ version: "v1", auth });
 }
 
 export async function listUnreadEmails(gmail) {

@@ -1,0 +1,6 @@
+{
+  "model": "gemini-3-flash-preview",
+  "schema": "./response-schema.json",
+  "prompt": "./system-prompt.txt",
+  "test_email": "./test-email.json"
+}

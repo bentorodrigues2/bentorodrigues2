@@ -1,0 +1,15 @@
+{
+  "tipo_remetente": "string",
+  "intencao": "string",
+  "fracao_identificada": "string",
+  "dados_fiscais": {
+    "valor_total": "number",
+    "nif": "string",
+    "numero_documento": "string",
+    "iban": "string",
+    "datas_relevantes": "string"
+  },
+  "acao_sistema": "string",
+  "sendEmail": "boolean",
+  "resposta_sugerida": "string"
+}
