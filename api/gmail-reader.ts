@@ -23,6 +23,8 @@ export default async function handler(req, res) {
 
     const messages = list.data.messages || [];
 
+    const baseUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+
     for (const msg of messages) {
       const full = await gmail.users.messages.get({
         userId: "me",
@@ -43,12 +45,12 @@ export default async function handler(req, res) {
       };
 
       const aiResponse = await axios.post(
-        `${process.env.VERCEL_URL}/api/ai-studio-router`,
+        `${baseUrl}/api/ai-studio-router`,
         { email }
       );
 
       await axios.post(
-        `${process.env.VERCEL_URL}/api/autoresponder`,
+        `${baseUrl}/api/autoresponder`,
         { aiResponse: aiResponse.data, email }
       );
     }
