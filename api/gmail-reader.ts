@@ -15,12 +15,12 @@ export default async function handler(req, res) {
 
     await client.connect();
 
-    let lock = await client.getMailboxLock("INBOX");
+    // ⭐ CORREÇÃO CRÍTICA: Gmail usa labels → All Mail contém TUDO
+    let lock = await client.getMailboxLock("[Gmail]/All Mail");
 
     // Procurar emails não lidos
     const searchResult = await client.search({ seen: false });
 
-    // Se não houver emails, searchResult = false
     if (!searchResult || searchResult.length === 0) {
       lock.release();
       await client.logout();
@@ -30,7 +30,6 @@ export default async function handler(req, res) {
     for (const seq of searchResult) {
       const msg = await client.fetchOne(seq, { envelope: true, source: true });
 
-      // Se fetchOne falhar, msg = false
       if (!msg || !msg.envelope) {
         continue;
       }
@@ -39,9 +38,9 @@ export default async function handler(req, res) {
       const subject = msg.envelope.subject || "";
       const raw = msg.source?.toString() || "";
 
-      // Enviar para o autoresponder
+      // ⭐ CORREÇÃO CRÍTICA: URL válida com https://
       await axios.post(
-        `${process.env.VERCEL_URL}/api/autoresponder`,
+        `https://${process.env.VERCEL_URL}/api/autoresponder`,
         { from, subject, raw }
       );
 
