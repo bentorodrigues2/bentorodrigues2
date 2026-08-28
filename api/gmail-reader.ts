@@ -3,31 +3,20 @@ import { google } from "googleapis";
 
 export default async function handler(req, res) {
   try {
-    // 1. Ler o JSON completo da Service Account
-    const credentials = JSON.parse(
-      process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || "{}"
-    );
-
-    // 2. Criar autenticação Google sem mexer na chave privada
     const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: [
-        "https://www.googleapis.com/auth/gmail.readonly",
-        "https://www.googleapis.com/auth/gmail.send",
-        "https://www.googleapis.com/auth/gmail.modify"
-      ]
+      credentials: {
+        client_email: process.env.GMAIL_CLIENT_EMAIL,
+        private_key: process.env.GMAIL_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      },
+      scopes: ["https://mail.google.com/"],
     });
 
     const gmail = google.gmail({ version: "v1", auth });
 
-    // 3. Obter emails não lidos
     const messages = await obterEmails(gmail);
 
-    // 4. Processar cada email
     for (const msg of messages) {
       await processarEmail(msg);
-
-      // Delay de 3 segundos entre emails
       await new Promise(resolve => setTimeout(resolve, 3000));
     }
 
@@ -41,7 +30,7 @@ export default async function handler(req, res) {
 async function obterEmails(gmail) {
   const res = await gmail.users.messages.list({
     userId: "me",
-    q: "is:unread"
+    q: "is:unread",
   });
 
   return res.data.messages || [];
