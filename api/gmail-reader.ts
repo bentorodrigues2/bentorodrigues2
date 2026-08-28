@@ -1,24 +1,39 @@
-import axios from "axios";
-import { google } from "googleapis";
+import { ImapFlow } from "imapflow";
+import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GMAIL_CLIENT_EMAIL,
-        private_key: process.env.GMAIL_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    // 1. Ligação IMAP para ler emails
+    const client = new ImapFlow({
+      host: "imap.gmail.com",
+      port: 993,
+      secure: true,
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
       },
-      scopes: ["https://mail.google.com/"],
     });
 
-    const gmail = google.gmail({ version: "v1", auth });
+    await client.connect();
 
-    const messages = await obterEmails(gmail);
+    // Abrir inbox
+    let lock = await client.getMailboxLock("INBOX");
 
-    for (const msg of messages) {
-      await processarEmail(msg);
-      await new Promise(resolve => setTimeout(resolve, 3000));
+    // Procurar emails não lidos
+    const messages = await client.search({ seen: false });
+
+    for (const seq of messages) {
+      const msg = await client.fetchOne(seq, { envelope: true });
+
+      // Enviar resposta automática
+      await enviarRespostaAutomatica(msg.envelope.from[0].address);
+
+      // Marca como lido
+      await client.messageFlagsAdd(seq, ["\\Seen"]);
     }
+
+    lock.release();
+    await client.logout();
 
     res.status(200).json({ status: "ok" });
   } catch (error) {
@@ -27,18 +42,20 @@ export default async function handler(req, res) {
   }
 }
 
-async function obterEmails(gmail) {
-  const res = await gmail.users.messages.list({
-    userId: "me",
-    q: "is:unread",
+// 2. Enviar resposta automática
+async function enviarRespostaAutomatica(destino) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
   });
 
-  return res.data.messages || [];
-}
-
-async function processarEmail(msg) {
-  await axios.post(
-    `${process.env.VERCEL_URL}/api/autoresponder`,
-    { id: msg.id }
-  );
+  await transporter.sendMail({
+    from: `"CondoManager AI" <${process.env.GMAIL_USER}>`,
+    to: destino,
+    subject: "Recebemos o seu email",
+    text: "O seu email foi recebido e está a ser processado automaticamente.",
+  });
 }
