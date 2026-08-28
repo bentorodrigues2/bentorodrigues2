@@ -1,66 +1,53 @@
-export const config = {
-  runtime: "nodejs"
-};
-import { ImapFlow } from "imapflow";
-import axios from "axios";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+function extractEmail(fromField) {
+  if (!fromField) return null;
+  const match = String(fromField).match(/<([^>]+)>/);
+  return match ? match[1].trim() : String(fromField).trim();
+}
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ erro: "Método não permitido" });
+  }
+
   try {
-    const client = new ImapFlow({
-      host: "imap.gmail.com",
-      port: 993,
-      secure: true,
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
+    const { aiResponse, email } = req.body || {};
+
+    if (!aiResponse || !email) {
+      return res.status(400).json({ erro: "Falta dados" });
+    }
+
+    const resposta = aiResponse.respostaAutomaticaSugerida;
+
+    if (!resposta || !resposta.assunto || !resposta.corpoTexto) {
+      return res.status(200).json({ enviado: false });
+    }
+
+    const recipientEmail = extractEmail(email.from);
+
+    if (!recipientEmail || !recipientEmail.includes("@")) {
+      return res.status(400).json({ erro: "Email inválido" });
+    }
+
+    const formattedHtml = resposta.corpoTexto.replace(/\n/g, "<br/>");
+
+    const sender = process.env.RESEND_FROM_EMAIL || "Condomínio <onboarding@resend.dev>";
+
+    const data = await resend.emails.send({
+      from: sender,
+      to: [recipientEmail],
+      subject: resposta.assunto,
+      html: formattedHtml,
+      text: resposta.corpoTexto
     });
 
-    await client.connect();
+    return res.status(200).json({ enviado: true, id: data.id || data.data?.id });
 
-    let lock = await client.getMailboxLock("INBOX");
-
-    const searchResult = await client.search({ seen: false });
-
-    if (!searchResult || searchResult.length === 0) {
-      lock.release();
-      await client.logout();
-      return res.status(200).json({ status: "no-unread-emails" });
-    }
-
-    for (const seq of searchResult) {
-      const msg = await client.fetchOne(seq, { envelope: true, source: true });
-
-      if (!msg || !msg.envelope) continue;
-
-      const from = msg.envelope.from?.[0]?.address || "";
-      const subject = msg.envelope.subject || "";
-      const raw = msg.source?.toString() || "";
-
-      await axios.post(
-        `https://${process.env.VERCEL_URL}/api/autoresponder`,
-        {
-          aiResponse: {
-            respostaAutomaticaSugerida: {
-              assunto: subject,
-              corpoTexto: raw
-            }
-          },
-          email: {
-            from
-          }
-        }
-      );
-
-      await client.messageFlagsAdd(seq, ["\\Seen"]);
-    }
-
-    lock.release();
-    await client.logout();
-
-    res.status(200).json({ status: "ok" });
-  } catch (error) {
-    console.error("Erro no gmail-reader:", error);
-    res.status(500).json({ error: "Erro no gmail-reader" });
+  } catch (e) {
+    console.error("Erro autoresponder:", e);
+    return res.status(500).json({ erro: "Erro autoresponder", detalhe: e.message });
   }
 }
