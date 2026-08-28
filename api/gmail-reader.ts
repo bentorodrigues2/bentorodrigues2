@@ -1,9 +1,8 @@
 import { ImapFlow } from "imapflow";
-import nodemailer from "nodemailer";
+import axios from "axios";
 
 export default async function handler(req, res) {
   try {
-    // 1. Ligação IMAP para ler emails
     const client = new ImapFlow({
       host: "imap.gmail.com",
       port: 993,
@@ -16,17 +15,35 @@ export default async function handler(req, res) {
 
     await client.connect();
 
-    // Abrir inbox
     let lock = await client.getMailboxLock("INBOX");
 
     // Procurar emails não lidos
-    const messages = await client.search({ seen: false });
+    const searchResult = await client.search({ seen: false });
 
-    for (const seq of messages) {
-      const msg = await client.fetchOne(seq, { envelope: true });
+    // Se não houver emails, searchResult = false
+    if (!searchResult || searchResult.length === 0) {
+      lock.release();
+      await client.logout();
+      return res.status(200).json({ status: "no-unread-emails" });
+    }
 
-      // Enviar resposta automática
-      await enviarRespostaAutomatica(msg.envelope.from[0].address);
+    for (const seq of searchResult) {
+      const msg = await client.fetchOne(seq, { envelope: true, source: true });
+
+      // Se fetchOne falhar, msg = false
+      if (!msg || !msg.envelope) {
+        continue;
+      }
+
+      const from = msg.envelope.from?.[0]?.address || "";
+      const subject = msg.envelope.subject || "";
+      const raw = msg.source?.toString() || "";
+
+      // Enviar para o autoresponder
+      await axios.post(
+        `${process.env.VERCEL_URL}/api/autoresponder`,
+        { from, subject, raw }
+      );
 
       // Marca como lido
       await client.messageFlagsAdd(seq, ["\\Seen"]);
@@ -40,22 +57,4 @@ export default async function handler(req, res) {
     console.error("Erro no gmail-reader:", error);
     res.status(500).json({ error: "Erro no gmail-reader" });
   }
-}
-
-// 2. Enviar resposta automática
-async function enviarRespostaAutomatica(destino) {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
-
-  await transporter.sendMail({
-    from: `"CondoManager AI" <${process.env.GMAIL_USER}>`,
-    to: destino,
-    subject: "Recebemos o seu email",
-    text: "O seu email foi recebido e está a ser processado automaticamente.",
-  });
 }
