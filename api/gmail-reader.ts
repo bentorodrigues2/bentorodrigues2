@@ -15,8 +15,8 @@ export default async function handler(req, res) {
 
     await client.connect();
 
-    // ⭐ A tua conta usa "All Mail" sem prefixo
-    let lock = await client.getMailboxLock("All Mail");
+    // ⭐ A tua conta só suporta INBOX como mailbox IMAP
+    let lock = await client.getMailboxLock("INBOX");
 
     const searchResult = await client.search({ seen: false });
 
@@ -37,6 +37,7 @@ export default async function handler(req, res) {
       const subject = msg.envelope.subject || "";
       const raw = msg.source?.toString() || "";
 
+      // ⭐ URL corrigida com https://
       await axios.post(
         `https://${process.env.VERCEL_URL}/api/autoresponder`,
         { from, subject, raw }
