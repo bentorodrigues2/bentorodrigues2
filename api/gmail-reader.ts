@@ -6,7 +6,6 @@ import { ImapFlow } from "imapflow";
 import axios from "axios";
 
 export default async function handler(req, res) {
-  // ⭐ Aceitar GET porque o cron da Vercel usa GET
   if (req.method !== "GET") {
     return res.status(405).json({ erro: "Método não permitido" });
   }
@@ -26,12 +25,13 @@ export default async function handler(req, res) {
 
     let lock = await client.getMailboxLock("INBOX");
 
-    const searchResult = await client.search({ seen: false });
+    // Processa todos os emails
+    const searchResult = await client.search({});
 
     if (!searchResult || searchResult.length === 0) {
       lock.release();
       await client.logout();
-      return res.status(200).json({ status: "no-unread-emails" });
+      return res.status(200).json({ status: "no-emails" });
     }
 
     for (const seq of searchResult) {
@@ -40,6 +40,7 @@ export default async function handler(req, res) {
       if (!msg || !msg.envelope) continue;
 
       const from = msg.envelope.from?.[0]?.address || "";
+      const to = msg.envelope.to?.[0]?.address || "";
       const subject = msg.envelope.subject || "";
       const raw = msg.source?.toString() || "";
 
@@ -53,7 +54,8 @@ export default async function handler(req, res) {
             }
           },
           email: {
-            from
+            from,
+            to
           }
         }
       );

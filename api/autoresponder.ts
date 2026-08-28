@@ -20,12 +20,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ enviado: false });
     }
 
-    // ⭐ Enviar para o destinatário correto
-    const recipient = email.to;
-
     await resend.emails.send({
       from: "Condomínio <no-reply@condomanager.ai>",
-      to: recipient,
+      to: email.to, // ← AGORA ENVIA PARA TI
       subject: resposta.assunto,
       html: resposta.corpoTexto
     });
