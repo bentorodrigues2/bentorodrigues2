@@ -1,3 +1,6 @@
+export const config = {
+  runtime: "nodejs"
+};
 import { ImapFlow } from "imapflow";
 import axios from "axios";
 
@@ -34,7 +37,6 @@ export default async function handler(req, res) {
       const subject = msg.envelope.subject || "";
       const raw = msg.source?.toString() || "";
 
-      // ⭐ Enviar no formato EXACTO que o AI Studio definiu
       await axios.post(
         `https://${process.env.VERCEL_URL}/api/autoresponder`,
         {
