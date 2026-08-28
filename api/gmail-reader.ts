@@ -15,7 +15,6 @@ export default async function handler(req, res) {
 
     await client.connect();
 
-    // ⭐ A tua conta só suporta INBOX como mailbox IMAP
     let lock = await client.getMailboxLock("INBOX");
 
     const searchResult = await client.search({ seen: false });
@@ -29,18 +28,26 @@ export default async function handler(req, res) {
     for (const seq of searchResult) {
       const msg = await client.fetchOne(seq, { envelope: true, source: true });
 
-      if (!msg || !msg.envelope) {
-        continue;
-      }
+      if (!msg || !msg.envelope) continue;
 
       const from = msg.envelope.from?.[0]?.address || "";
       const subject = msg.envelope.subject || "";
       const raw = msg.source?.toString() || "";
 
-      // ⭐ URL corrigida com https://
+      // ⭐ Enviar no formato EXACTO que o AI Studio definiu
       await axios.post(
         `https://${process.env.VERCEL_URL}/api/autoresponder`,
-        { from, subject, raw }
+        {
+          aiResponse: {
+            respostaAutomaticaSugerida: {
+              assunto: subject,
+              corpoTexto: raw
+            }
+          },
+          email: {
+            from
+          }
+        }
       );
 
       await client.messageFlagsAdd(seq, ["\\Seen"]);
