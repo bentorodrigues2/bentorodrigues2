@@ -1,9 +1,12 @@
 {
+  "buildCommand": "",
+  "outputDirectory": "",
   "functions": {
-    "api/*.js": {
+    "api/**/*": {
       "runtime": "nodejs18.x"
     }
   },
-  "ignoreCommand": "echo 'Ignoring non-api files'",
-  "buildCommand": "echo 'No build needed'"
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" }
+  ]
 }
