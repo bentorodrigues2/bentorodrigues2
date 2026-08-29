@@ -1,8 +1,9 @@
 {
-  "crons": [
-    {
-      "path": "/api/gmail-reader",
-      "schedule": "*/10 * * * *"
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs18.x"
     }
-  ]
+  },
+  "ignoreCommand": "echo 'Ignoring non-api files'",
+  "buildCommand": "echo 'No build needed'"
 }
