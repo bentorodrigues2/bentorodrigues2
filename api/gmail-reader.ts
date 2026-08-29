@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
     let lock = await client.getMailboxLock("INBOX");
 
-    // Processa todos os emails
+    // ⭐ Processar TODOS os emails (lidos ou não)
     const searchResult = await client.search({});
 
     if (!searchResult || searchResult.length === 0) {

@@ -20,11 +20,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ enviado: false });
     }
 
+    // ⭐ Limpar o corpo do email para HTML válido
+    const safeHtml = resposta.corpoTexto
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n/g, "<br/>");
+
     await resend.emails.send({
       from: "Condomínio <no-reply@condomanager.ai>",
-      to: email.to, // ← AGORA ENVIA PARA TI
+      to: email.to,   // ← ENVIA PARA TI
       subject: resposta.assunto,
-      html: resposta.corpoTexto
+      html: safeHtml
     });
 
     return res.status(200).json({ enviado: true });
