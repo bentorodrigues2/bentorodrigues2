@@ -20,17 +20,24 @@ export default async function handler(req, res) {
       return res.status(200).json({ enviado: false });
     }
 
-    // ⭐ Limpar o corpo do email para HTML válido
+    // ⭐ Limpar HTML
     const safeHtml = resposta.corpoTexto
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/\n/g, "<br/>");
 
+    // ⭐ Construir bloco de anexos (metadados)
+    const anexosHtml = resposta.anexos?.length
+      ? `<br><br><strong>Anexos recebidos:</strong><br>${resposta.anexos
+          .map(a => `${a.filename} (${a.mime}, ${a.size} bytes)`)
+          .join("<br>")}`
+      : "";
+
     await resend.emails.send({
       from: "Condomínio <no-reply@condomanager.ai>",
-      to: email.to,   // ← ENVIA PARA TI
+      to: email.to,
       subject: resposta.assunto,
-      html: safeHtml
+      html: safeHtml + anexosHtml
     });
 
     return res.status(200).json({ enviado: true });

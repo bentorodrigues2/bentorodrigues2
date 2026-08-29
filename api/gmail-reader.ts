@@ -25,35 +25,46 @@ export default async function handler(req, res) {
 
     let lock = await client.getMailboxLock("INBOX");
 
-    // ⭐ Processar TODOS os emails (lidos ou não)
-    const searchResult = await client.search({});
+    // ⭐ Processar apenas emails NÃO lidos
+    const searchResult = await client.search({ seen: false });
 
     if (!searchResult || searchResult.length === 0) {
       lock.release();
       await client.logout();
-      return res.status(200).json({ status: "no-emails" });
+      return res.status(200).json({ status: "no-new-emails" });
     }
 
     for (const seq of searchResult) {
-      const msg = await client.fetchOne(seq, { envelope: true, source: true });
+      const msg = await client.fetchOne(seq, { envelope: true, source: true, bodyStructure: true });
 
       if (!msg || !msg.envelope) continue;
 
       const from = msg.envelope.from?.[0]?.address || "";
       const to = msg.envelope.to?.[0]?.address || "";
       const subject = msg.envelope.subject || "";
-      const raw = msg.source?.toString() || "";
 
-      // ⭐ Evitar FUNCTION_PAYLOAD_TOO_LARGE
-      const safeRaw = raw.slice(0, 5000);
+      // ⭐ Snippet seguro (não inclui anexos nem HTML perigoso)
+      const snippet = msg.source?.toString().slice(0, 500) || "";
 
+      // ⭐ Metadados dos anexos (sem conteúdo)
+      const attachments =
+        msg.bodyStructure?.childNodes
+          ?.filter(n => n.disposition?.type === "attachment")
+          ?.map(n => ({
+            filename: n.disposition?.params?.filename || "anexo",
+            size: n.size || 0,
+            mime: `${n.type}/${n.subtype}`
+          })) || [];
+
+      // ⭐ Enviar apenas dados seguros para o autoresponder
       await axios.post(
         "https://bentorodrigues2.vercel.app/api/autoresponder",
         {
           aiResponse: {
             respostaAutomaticaSugerida: {
               assunto: subject,
-              corpoTexto: safeRaw
+              corpoTexto: snippet,
+              anexos: attachments
             }
           },
           email: {
@@ -66,6 +77,9 @@ export default async function handler(req, res) {
       // Marcar como lido
       await client.messageFlagsAdd(seq, ["\\Seen"]);
     }
+
+    // ⭐ Limpar lixo IMAP (emails apagados no Gmail Web)
+    await client.expunge();
 
     lock.release();
     await client.logout();
