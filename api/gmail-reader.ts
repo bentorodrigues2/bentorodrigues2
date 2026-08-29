@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     }
 
     for (const seq of searchResult) {
-      const msg = await client.fetchOne(seq, { envelope: true, source: true, bodyStructure: true });
+      const msg = await client.fetchOne(seq, { envelope: true, source: true });
 
       if (!msg || !msg.envelope) continue;
 
@@ -43,18 +43,8 @@ export default async function handler(req, res) {
       const to = msg.envelope.to?.[0]?.address || "";
       const subject = msg.envelope.subject || "";
 
-      // ⭐ Snippet seguro (não inclui anexos nem HTML perigoso)
+      // ⭐ Snippet seguro (não inclui anexos)
       const snippet = msg.source?.toString().slice(0, 500) || "";
-
-      // ⭐ Metadados dos anexos (sem conteúdo)
-      const attachments =
-        msg.bodyStructure?.childNodes
-          ?.filter(n => n.disposition?.type === "attachment")
-          ?.map(n => ({
-            filename: n.disposition?.params?.filename || "anexo",
-            size: n.size || 0,
-            mime: `${n.type}/${n.subtype}`
-          })) || [];
 
       // ⭐ Enviar apenas dados seguros para o autoresponder
       await axios.post(
@@ -63,8 +53,7 @@ export default async function handler(req, res) {
           aiResponse: {
             respostaAutomaticaSugerida: {
               assunto: subject,
-              corpoTexto: snippet,
-              anexos: attachments
+              corpoTexto: snippet
             }
           },
           email: {
@@ -77,9 +66,6 @@ export default async function handler(req, res) {
       // Marcar como lido
       await client.messageFlagsAdd(seq, ["\\Seen"]);
     }
-
-    // ⭐ Limpar lixo IMAP (emails apagados no Gmail Web)
-    await client.expunge();
 
     lock.release();
     await client.logout();
