@@ -10,8 +10,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ erro: "Método não permitido" });
   }
 
+  let client;
+  let lock;
+
   try {
-    const client = new ImapFlow({
+    client = new ImapFlow({
       host: "imap.gmail.com",
       port: 993,
       secure: true,
@@ -22,10 +25,8 @@ export default async function handler(req, res) {
     });
 
     await client.connect();
+    lock = await client.getMailboxLock("INBOX");
 
-    let lock = await client.getMailboxLock("INBOX");
-
-    // ⭐ Processar apenas emails NÃO lidos
     const searchResult = await client.search({ seen: false });
 
     if (!searchResult || searchResult.length === 0) {
@@ -35,44 +36,53 @@ export default async function handler(req, res) {
     }
 
     for (const seq of searchResult) {
-      const msg = await client.fetchOne(seq, { envelope: true, source: true });
+      const msg = await client.fetchOne(seq, { envelope: true });
 
       if (!msg || !msg.envelope) continue;
 
       const from = msg.envelope.from?.[0]?.address || "";
+      const fromName = msg.envelope.from?.[0]?.name || "Condómino";
       const to = msg.envelope.to?.[0]?.address || "";
-      const subject = msg.envelope.subject || "";
+      const subject = msg.envelope.subject || "Sem Assunto";
 
-      // ⭐ Snippet seguro (não inclui anexos)
-      const snippet = msg.source?.toString().slice(0, 500) || "";
+      if (!from) continue;
 
-      // ⭐ Enviar apenas dados seguros para o autoresponder
+      const corpoResposta = `Estimado(a) ${fromName},
+
+Confirmamos a receção do seu e-mail com o assunto: "${subject}".
+
+A sua mensagem foi registada no sistema de gestão do condomínio e será analisada com a maior brevidade possível pela Administração.
+
+Com os melhores cumprimentos,
+Administração do Condomínio`;
+
       await axios.post(
         "https://bentorodrigues2.vercel.app/api/autoresponder",
         {
           aiResponse: {
             respostaAutomaticaSugerida: {
-              assunto: subject,
-              corpoTexto: snippet
+              assunto: `Re: ${subject} [Confirmado]`,
+              corpoTexto: corpoResposta
             }
           },
           email: {
-            from,
-            to
+            from, // condómino
+            to    // condomínio
           }
         }
       );
 
-      // Marcar como lido
       await client.messageFlagsAdd(seq, ["\\Seen"]);
     }
 
     lock.release();
     await client.logout();
 
-    res.status(200).json({ status: "ok" });
+    res.status(200).json({ status: "ok", emailsProcessados: searchResult.length });
   } catch (error) {
+    if (lock) lock.release();
+    if (client) await client.logout().catch(() => {});
     console.error("Erro no gmail-reader:", error);
-    res.status(500).json({ error: "Erro no gmail-reader" });
+    res.status(500).json({ error: "Erro no gmail-reader", detalhe: error.message });
   }
 }
