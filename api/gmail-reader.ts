@@ -44,13 +44,16 @@ export default async function handler(req, res) {
       const subject = msg.envelope.subject || "";
       const raw = msg.source?.toString() || "";
 
+      // ⭐ Evitar FUNCTION_PAYLOAD_TOO_LARGE
+      const safeRaw = raw.slice(0, 5000);
+
       await axios.post(
         "https://bentorodrigues2.vercel.app/api/autoresponder",
         {
           aiResponse: {
             respostaAutomaticaSugerida: {
               assunto: subject,
-              corpoTexto: raw
+              corpoTexto: safeRaw
             }
           },
           email: {
@@ -60,6 +63,7 @@ export default async function handler(req, res) {
         }
       );
 
+      // Marcar como lido
       await client.messageFlagsAdd(seq, ["\\Seen"]);
     }
 
