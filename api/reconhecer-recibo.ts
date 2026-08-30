@@ -6,7 +6,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Validar API Secret
     const secret = req.headers["x-api-key"];
     if (!secret || secret !== process.env.CONDOMANAGER_API_SECRET) {
       return res.status(401).json({ error: "API secret inválida" });
