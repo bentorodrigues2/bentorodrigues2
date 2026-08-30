@@ -31,22 +31,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = req.body as Payload;
 
     if (!body?.email?.to || !body.documentosReconhecidos?.length) {
-      return res.status(400).json({ error: 'Payload inválido para autoresponder' });
+      return res.status(400).json({ error: 'Payload invÃ¡lido para autoresponder' });
     }
 
     if (!body.secret || body.secret !== CONDOMANAGER_API_SECRET) {
-      return res.status(401).json({ error: 'API secret inválida' });
+      return res.status(401).json({ error: 'API secret invÃ¡lida' });
     }
 
     const resumo = body.documentosReconhecidos
-      .map((d) => •  ()\n\n)
+      .map((d) => `â€¢ ${d.nome} (${d.mimeType})\n${d.resultado}\n`)
       .join('\n');
 
     await resend.emails.send({
       from: body.email.from,
       to: body.email.to,
-      subject: Documentos processados – Prédio ,
-      text: Foram processados os seguintes documentos:\n\n,
+      subject: `Documentos processados â€“ PrÃ©dio ${body.predioId}`,
+      text: `Foram processados os seguintes documentos:\n\n${resumo}`,
     });
 
     return res.status(200).json({ success: true });

@@ -22,7 +22,6 @@ type Payload = {
     from: string;
     to: string;
     subject: string;
-    messageId?: string;
   };
   predioId: string;
   documentos: Documento[];
@@ -42,7 +41,7 @@ async function reconhecerDocumento(doc: Documento) {
             },
           },
           {
-            text: "Analisa este documento (recibo, fatura, extrato banc·rio, contrato, etc.) e devolve JSON estruturado."
+            text: "Analisa este documento e devolve JSON estruturado."
           }
         ],
       },
@@ -61,11 +60,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = req.body as Payload;
 
     if (!body || !body.predioId || !body.documentos?.length) {
-      return res.status(400).json({ error: 'Payload inv·lido" });
+      return res.status(400).json({ error: 'Payload inv√°lido' });
     }
 
     if (!body.secret || body.secret !== CONDOMANAGER_API_SECRET) {
-      return res.status(401).json({ error: 'API secret inv·lida' });
+      return res.status(401).json({ error: 'API secret inv√°lida' });
     }
 
     const resultados = [];
