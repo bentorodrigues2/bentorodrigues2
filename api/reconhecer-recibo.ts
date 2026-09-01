@@ -68,10 +68,6 @@ Extrai os dados e classifica o documento.`;
 
     let parsed: any = {};
     try {
-      const ai = getAI();
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents,
         config: {
           temperature: 0.1,
           responseMimeType: "application/json",
@@ -84,7 +80,11 @@ Extrai os dados e classifica o documento.`;
 
     // Garante sempre a resposta contábil e o autoresponder estruturado
     const resultadoFinal = {
-      sucesso: true,
+      su const ai = getAI();
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents,
+     cesso: true,
       classificacao: parsed.classificacao || {
         tipo: "COMPROVATIVO_QUOTA",
         confianca: 0.98,
