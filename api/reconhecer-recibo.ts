@@ -59,7 +59,13 @@ Devolve a análise em formato JSON com:
 `;
 
     // Conteúdos: texto + anexos inlineData
-    const contents = [{ text: prompt }];
+    const contents: any[] = [
+  {
+    role: "user",
+    parts: [{ text: prompt }]
+  }
+];
+
 
     if (Array.isArray(documentos)) {
       for (const doc of documentos) {

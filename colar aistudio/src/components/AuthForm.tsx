@@ -10,13 +10,13 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({
-  initialEmail = "carlos.adm@condomanager.pt",
+  initialEmail = "condomanagerai@gmail.com",
   initialErrorMessage = "",
   onLoginSuccess,
   onOpenSecurityLogs,
 }: AuthFormProps) {
   const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState("PassCarlos2025!");
+  const [password, setPassword] = useState("*Condomanager2026");
   const [errorMessage, setErrorMessage] = useState(initialErrorMessage);
   const [resetMode, setResetMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);

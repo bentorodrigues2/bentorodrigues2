@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Predio, Fornecedor, LoggedUser } from "../types";
-import { exportToXLS, generateSupplierPwaManualPDF } from "../utils";
+import { exportToXLS, generateSupplierPwaManualPDF, gerarPdfRegistoFornecedorHomologado } from "../utils";
 
 interface GestaoFornecedoresProps {
   predio: Predio;
@@ -514,8 +514,8 @@ export function GestaoFornecedores({ predio, fornecedores, onAddFornecedor, logg
                   <div className="flex items-center space-x-2">
                     <i className="fa-solid fa-paper-plane text-emerald-400 text-lg"></i>
                     <div>
-                      <h3 className="font-bold text-sm uppercase">Simulador de E-mail de Boas-Vindas PWA</h3>
-                      <p className="text-[10px] text-slate-300">Instruções de acesso e manual do fornecedor em PDF</p>
+                      <h3 className="font-bold text-sm uppercase">Registo de Fornecedor Homologado</h3>
+                      <p className="text-[10px] text-slate-300">Comunicação oficial e credencial de acesso em PDF</p>
                     </div>
                   </div>
                   <button onClick={() => setWelcomeModalFornecedor(null)} className="text-slate-400 hover:text-white cursor-pointer">
@@ -542,44 +542,49 @@ export function GestaoFornecedores({ predio, fornecedores, onAddFornecedor, logg
                     </div>
 
                     <div className="space-y-1 text-slate-700 font-sans">
-                      <p><strong>De:</strong> fornecedores@condomanager.pt</p>
+                      <p><strong>De:</strong> {(predio as any).email_administracao || (predio as any).email || "administracao@condomanagerai.com"}</p>
                       <p><strong>Para:</strong> {welcomeModalFornecedor.email_contacto || welcomeModalFornecedor.contacto || "fornecedor@empresa.pt"}</p>
-                      <p><strong>Assunto:</strong> 🔐 Credenciais de Acesso à PWA & Instruções de Operação - {predio.nome}</p>
+                      <p><strong>Assunto:</strong> Registo de Fornecedor Homologado - Condomínio Edifício Estrela da Barra</p>
                     </div>
                     <hr className="border-emerald-100" />
                     <div className="space-y-3 text-slate-700 font-sans leading-relaxed relative z-10">
-                      <p>Estimado(a) parceiro(a) <strong>{welcomeModalFornecedor.nome}</strong>,</p>
-                      <p>É com muito gosto que o(a) bem-vinda ao ecossistema de gestão do <strong>{predio.nome}</strong>.</p>
-                      <p>Atribuímos-lhe os seguintes perfis funcionais na nossa aplicação PWA: <strong>{welcomeModalFornecedor.perfis_pwa?.join(", ") || "Parceiro Credenciado"}</strong>.</p>
+                      <p>Exmos. Senhores <strong>{welcomeModalFornecedor.nome}</strong>,</p>
+                      <p>Confirmamos a conclusão do registo da vossa empresa no catálogo de fornecedores e prestadores homologados do <strong>Condomínio Edifício Estrela da Barra</strong>.</p>
                       
-                      <div className="bg-white/80 backdrop-blur-xs border border-slate-200 p-3 rounded-lg font-mono text-[11px] text-slate-800 space-y-1">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Acessos Provisórios:</p>
-                        <p>• <strong>Link PWA:</strong> https://condomanager.pt/pwa/login</p>
-                        <p>• <strong>Palavra-passe:</strong> {welcomeModalFornecedor.pwa_password_provisoria || "PwaForn2026!"}</p>
+                      <div className="bg-white/90 border border-slate-200 p-3 rounded-lg text-[11px] text-slate-800 space-y-1">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Dados Fiscais para Faturação :</p>
+                        <p>• <strong>Designação:</strong> Condomínio Edifício Estrela da Barra</p>
+                        <p>• <strong>NIF:</strong> 900123456</p>
+                        <p>• <strong>Morada de Faturação:</strong> Rua Bento Rodrigues</p>
+                        <p>• <strong>E-mail para Envio de Faturas/Recibos:</strong> {(predio as any).email_administracao || (predio as any).email || "administracao@condomanagerai.com"}</p>
+                      </div>
+
+                      <div className="bg-amber-50/90 border border-amber-200 p-3 rounded-lg text-[11px] text-slate-800 space-y-1">
+                        <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-1">Dados de Acesso:</p>
+                        <p>• <strong>Link:</strong> <span className="font-mono text-indigo-600">https://bentorodrigues2.condomanagerai.com</span></p>
+                        <p>• <strong>Utilizador:</strong> <span className="font-mono">{welcomeModalFornecedor.email_contacto || welcomeModalFornecedor.contacto || "fornecedor@empresa.pt"}</span></p>
+                        <p>• <strong>Password Provisória:</strong> <span className="font-mono font-bold text-amber-900">{welcomeModalFornecedor.pwa_password_provisoria || "Forn-82M4P9"}</span></p>
+                        <p className="text-[10px] text-amber-700 italic mt-1">(Por razões de segurança, ser-lhe-á solicitado que altere esta palavra-passe no seu primeiro acesso.)</p>
                       </div>
 
                       <div className="bg-emerald-100/80 border border-emerald-200 p-2.5 rounded-lg flex items-center justify-between">
                         <div className="flex items-center space-x-2 text-[11px] text-emerald-900">
                           <i className="fa-solid fa-file-pdf text-red-500 text-lg"></i>
-                          <span>Anexo: <strong>Instrucoes_PWA_{welcomeModalFornecedor.nome.replace(/\s+/g, "_")}.pdf</strong></span>
+                          <span>Anexo: <strong>Instrucoes_Acesso_Perfil_Fornecedor.pdf</strong></span>
                         </div>
                         <button
-                          onClick={() => generateSupplierPwaManualPDF(welcomeModalFornecedor.nome, welcomeModalFornecedor.perfis_pwa || [], welcomeModalFornecedor.pwa_password_provisoria)}
-                          className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] px-2.5 py-1 rounded transition-colors cursor-pointer"
+                          onClick={() => gerarPdfRegistoFornecedorHomologado(welcomeModalFornecedor, predio)}
+                          className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[10px] px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1"
                         >
-                          Baixar PDF
+                          <i className="fa-solid fa-download"></i> Baixar PDF
                         </button>
                       </div>
 
                       <div className="pt-3 border-t border-slate-200 space-y-1">
-                        <p className="text-slate-700 text-xs">Com os meus cumprimentos,</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <span className="bg-emerald-100 text-emerald-800 text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-emerald-300 inline-flex items-center gap-1">
-                            <i className="fa-solid fa-shield-halved text-emerald-600"></i> [Assinatura Digital Validada]
-                          </span>
-                        </div>
+                        <p className="text-slate-700 text-xs">Atentamente,</p>
                         <p className="text-slate-900 text-xs font-bold mt-1">José Carlos Guerra</p>
-                        <p className="text-slate-600 text-[11px]">O Administrador do Condomínio ({predio.nome})</p>
+                        <p className="text-slate-600 text-[11px]">+351 919 943 465</p>
+                        <p className="text-emerald-700 text-[11px] font-bold">O Administrador do Condominio</p>
                       </div>
                     </div>
                   </div>

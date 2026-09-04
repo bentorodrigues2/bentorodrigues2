@@ -11,6 +11,8 @@ import { GestaoContas } from "./components/GestaoContas";
 import { GestaoEmissao } from "./components/GestaoEmissao";
 import { GestaoMovimentos } from "./components/GestaoMovimentos";
 import { IAConciliacao } from "./components/IAConciliacao";
+import { AgendadorAutomatico } from "./components/AgendadorAutomatico";
+import { LeitorAnexosIA } from "./components/LeitorAnexosIA";
 import { GestaoAssembleias } from "./components/GestaoAssembleias";
 import { GestaoDocumentos } from "./components/GestaoDocumentos";
 import { GestaoVistoriasLimpezas } from "./components/GestaoVistoriasLimpezas";
@@ -34,6 +36,12 @@ import { AuditoriaInterna } from "./components/AuditoriaInterna";
 import { GestaoManutencaoIntervencoes } from "./components/GestaoManutencaoIntervencoes";
 import { ConfiguracoesAdministracao } from "./components/ConfiguracoesAdministracao";
 import { InventarioTecnico } from "./components/InventarioTecnico";
+import { EnviosProgramados } from "./components/EnviosProgramados";
+import { CentralDocumentosMinutas } from "./components/CentralDocumentosMinutas";
+import { ConfiguracaoArranqueSaldos } from "./components/ConfiguracaoArranqueSaldos";
+import { AgendaManutencao } from "./components/AgendaManutencao";
+import { GestaoSinistrosSeguros } from "./components/GestaoSinistrosSeguros";
+import { MuralDigitalReservas } from "./components/MuralDigitalReservas";
 import { SecurityAuditModal } from "./components/SecurityAuditModal";
 import { SendingReactionModal } from "./components/SendingReactionModal";
 import { DraggableAIFloatingButton } from "./components/DraggableAIFloatingButton";
@@ -105,13 +113,13 @@ export default function App() {
   ]);
 
   const [loggedUser, setLoggedUser] = useState<LoggedUser>({
-    nome: "Carlos Administrador",
-    email: "carlos.adm@condomanager.pt",
+    nome: "Administrador do Condomínio",
+    email: "condomanagerai@gmail.com",
     role: "ADMIN"
   });
 
   const [browserIsLoggedOut, setBrowserIsLoggedOut] = useState<boolean>(true);
-  const [browserEmail, setBrowserEmail] = useState<string>("carlos.adm@condomanager.pt");
+  const [browserEmail, setBrowserEmail] = useState<string>("condomanagerai@gmail.com");
   const [browserPassword, setBrowserPassword] = useState<string>("••••••••");
   const [browserSelectedRole, setBrowserSelectedRole] = useState<LoggedUser["role"]>("ADMIN");
   const [browserBiometricScan, setBrowserBiometricScan] = useState<boolean>(false);
@@ -209,6 +217,9 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [simulatorBarCollapsed, setSimulatorBarCollapsed] = useState<boolean>(false);
+  const [showTestingBar, setShowTestingBar] = useState<boolean>(() => {
+    return localStorage.getItem("condomanager_show_testing_bar") === "true"; // default false for production cleanliness
+  });
 
   // Route state
   const [currentRoute, setCurrentRoute] = useState<string>(() => {
@@ -257,7 +268,7 @@ export default function App() {
       setActiveSection(roleAccess.redirectTab);
     }
 
-    // B. Idle Activity Tracker (5-minute inactivity timeout for site + PWA)
+    // B. Idle Activity Tracker (10-minute inactivity timeout for site + PWA)
     let lastRecordedActivity = 0;
     const handleUserInteraction = () => {
       const now = Date.now();
@@ -500,10 +511,10 @@ export default function App() {
 
   if (browserIsLoggedOut) {
     const handleLoginFromTop = (emailInput?: string) => {
-      const cleanEmail = (emailInput || "carlos.adm@condomanager.pt").trim().toLowerCase();
+      const cleanEmail = (emailInput || "condomanagerai@gmail.com").trim().toLowerCase();
       const account = resolveUserByEmail(cleanEmail) || {
         role: "ADMIN" as const,
-        nome: "Carlos Administrador",
+        nome: "Administrador do Condomínio",
         email: cleanEmail
       };
       setLoggedUser({ role: account.role, email: account.email, nome: account.nome });
@@ -816,6 +827,21 @@ export default function App() {
                   <img src="/modulos/17-documentos-pessoais.png" alt="Perfis" className="w-4 h-4 object-contain shrink-0" />
                   <span>Perfis de Acesso dos Condóminos</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveSection("gestao_sinistros");
+                    setViewMode("BROWSER");
+                    setIaInitialTab(undefined);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-all cursor-pointer flex items-center gap-2 ${
+                    activeSection === "gestao_sinistros" || activeSection === "fracoes_sinistros"
+                      ? "bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400 pl-2.5" 
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                  }`}
+                >
+                  <i className="fa-solid fa-shield-halved text-amber-400 text-xs"></i>
+                  <span>Seguros & Sinistros</span>
+                </button>
               </div>
             )}
           </div>
@@ -826,14 +852,14 @@ export default function App() {
               id="sidebar-item-comunicacao"
               onClick={() => {
                 setOpenMenuComunicacoes(!openMenuComunicacoes);
-                if (!["comunicacao_broadcast", "comunicacao_chat", "comunicacao_sondagens", "comunicacao_questionarios", "assembleias", "portal_condomino"].includes(activeSection)) {
+                if (!["comunicacao_broadcast", "comunicacao_chat", "comunicacao_sondagens", "comunicacao_questionarios", "assembleias", "portal_condomino", "agendador_automatico", "agenda_notificacoes", "mural_reservas"].includes(activeSection)) {
                   setActiveSection("comunicacao_broadcast");
                 }
                 setViewMode("BROWSER");
                 setIaInitialTab(undefined);
               }}
               className={`w-full text-left px-3.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
-                ["comunicacao_broadcast", "comunicacao_chat", "comunicacao_sondagens", "comunicacao_questionarios", "portal_condomino"].includes(activeSection)
+                ["comunicacao_broadcast", "comunicacao_chat", "comunicacao_sondagens", "comunicacao_questionarios", "portal_condomino", "assembleias", "agendador_automatico", "agenda_notificacoes", "mural_reservas"].includes(activeSection)
                   ? "bg-emerald-600 text-white font-extrabold shadow-sm border border-emerald-500"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/30"
               }`}
@@ -876,6 +902,36 @@ export default function App() {
                 >
                   <img src="/modulos/74-mensagem-individual.png" alt="Mensagens Diretas" className="w-4 h-4 object-contain shrink-0" />
                   <span>Mensagens & Inbox (Admin)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveSection("agenda_notificacoes");
+                    setViewMode("BROWSER");
+                    setIaInitialTab(undefined);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-all cursor-pointer flex items-center gap-2 ${
+                    activeSection === "agenda_notificacoes" || activeSection === "agendador_automatico"
+                      ? "bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400 pl-2.5" 
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                  }`}
+                >
+                  <i className="fa-solid fa-calendar-check text-emerald-400 text-xs"></i>
+                  <span>Agenda de Notificações</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveSection("mural_reservas");
+                    setViewMode("BROWSER");
+                    setIaInitialTab(undefined);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-all cursor-pointer flex items-center gap-2 ${
+                    activeSection === "mural_reservas"
+                      ? "bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400 pl-2.5" 
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                  }`}
+                >
+                  <i className="fa-solid fa-chalkboard-user text-emerald-400 text-xs"></i>
+                  <span>Mural & Reservas</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1027,6 +1083,36 @@ export default function App() {
                 >
                   <img src="/modulos/64-saldo.png" alt="Extrato" className="w-4 h-4 object-contain shrink-0" />
                   <span>Extrato de Dívidas e Saldo</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveSection("conciliacao");
+                    setViewMode("BROWSER");
+                    setIaInitialTab(undefined);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-all cursor-pointer flex items-center gap-2 ${
+                    activeSection === "conciliacao" 
+                      ? "bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400 pl-2.5" 
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                  }`}
+                >
+                  <img src="/modulos/63-lista-de-pagamentos.png" alt="Conciliação" className="w-4 h-4 object-contain shrink-0" />
+                  <span>Conciliação Bancária (OFX/CSV)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveSection("ocr_faturas");
+                    setViewMode("BROWSER");
+                    setIaInitialTab(undefined);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-all cursor-pointer flex items-center gap-2 ${
+                    activeSection === "ocr_faturas" 
+                      ? "bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400 pl-2.5" 
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                  }`}
+                >
+                  <i className="fa-solid fa-file-invoice-dollar text-emerald-400 text-xs"></i>
+                  <span>Leitor IA de Faturas & Anexos</span>
                 </button>
               </div>
             )}
@@ -1311,14 +1397,14 @@ export default function App() {
               id="sidebar-item-juridico-ai"
               onClick={() => {
                 setOpenMenuJuridico(!openMenuJuridico);
-                if (!["contencioso_juridico", "contencioso_juridico_nd", "contencioso_juridico_doc_obrig", "contencioso_juridico_cartas", "contencioso_juridico_bni", "contencioso_juridico_regulamento", "contencioso_juridico_estatutos", "contencioso_juridico_ia"].includes(activeSection)) {
+                if (!["contencioso_juridico", "contencioso_juridico_processos", "contencioso_juridico_nd", "contencioso_juridico_doc_obrig", "contencioso_juridico_cartas", "contencioso_juridico_bni", "contencioso_juridico_regulamento", "contencioso_juridico_estatutos", "contencioso_juridico_ia"].includes(activeSection)) {
                   setActiveSection("contencioso_juridico");
                 }
                 setViewMode("BROWSER");
                 setIaInitialTab(undefined);
               }}
               className={`w-full text-left px-3.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
-                ["contencioso_juridico", "contencioso_juridico_nd", "contencioso_juridico_doc_obrig", "contencioso_juridico_cartas", "contencioso_juridico_bni", "contencioso_juridico_regulamento", "contencioso_juridico_estatutos", "contencioso_juridico_ia"].includes(activeSection)
+                ["contencioso_juridico", "contencioso_juridico_processos", "contencioso_juridico_nd", "contencioso_juridico_doc_obrig", "contencioso_juridico_cartas", "contencioso_juridico_bni", "contencioso_juridico_regulamento", "contencioso_juridico_estatutos", "contencioso_juridico_ia"].includes(activeSection)
                   ? "bg-emerald-600 text-white font-extrabold shadow-sm border border-emerald-500"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/30"
               }`}
@@ -1346,6 +1432,21 @@ export default function App() {
                 >
                   <img src="/modulos/22-documento-geral.png" alt="Contencioso" className="w-4 h-4 object-contain shrink-0" />
                   <span>Resumo de Contencioso</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveSection("contencioso_juridico_processos");
+                    setViewMode("BROWSER");
+                    setIaInitialTab(undefined);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-all cursor-pointer flex items-center gap-2 ${
+                    activeSection === "contencioso_juridico_processos" 
+                      ? "bg-emerald-500/20 text-emerald-300 font-bold border-l-2 border-emerald-400 pl-2.5" 
+                      : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                  }`}
+                >
+                  <img src="/modulos/23-contrato.png" alt="Processos & Provas" className="w-4 h-4 object-contain shrink-0" />
+                  <span>Processos & Provas Judiciais</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1562,7 +1663,55 @@ export default function App() {
             )}
           </div>
 
-          {/* 12. Arquivo */}
+          {/* 12. Minutas Oficiais & E-mails (NOVO) */}
+          <button 
+            id="sidebar-item-minutas-oficiais"
+            onClick={() => {
+              setActiveSection("minutas_oficiais");
+              setViewMode("BROWSER");
+              setIaInitialTab(undefined);
+            }}
+            className={`w-full text-left px-3.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+              activeSection === "minutas_oficiais" || activeSection === "simulador_emails"
+                ? "bg-indigo-600 text-white font-extrabold shadow-sm border border-indigo-500"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <i className="fa-solid fa-file-signature w-5 text-center text-indigo-400 text-sm"></i>
+              <span>Minutas & E-mails</span>
+            </div>
+            <span className="bg-indigo-500/20 text-indigo-300 text-[10px] font-black rounded-full px-1.5 py-0.5 border border-indigo-400/30 shadow-xs flex items-center justify-center min-w-[20px] h-5">
+              5 Docs
+            </span>
+          </button>
+
+          {/* 13. Arranque & Saldos Iniciais (NOVO) */}
+          {["ADMIN", "EMPRESA_GESTORA", "GESTOR"].includes(loggedUser.role) && (
+            <button 
+              id="sidebar-item-arranque-saldos"
+              onClick={() => {
+                setActiveSection("configuracao_arranque");
+                setViewMode("BROWSER");
+                setIaInitialTab(undefined);
+              }}
+              className={`w-full text-left px-3.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                activeSection === "configuracao_arranque"
+                  ? "bg-amber-500 text-slate-950 font-black shadow-sm border border-amber-400"
+                  : "text-amber-400/90 hover:text-amber-300 hover:bg-amber-950/30 border border-amber-900/30"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <i className="fa-solid fa-sliders w-5 text-center text-amber-400 text-sm"></i>
+                <span>Arranque & Saldos</span>
+              </div>
+              <span className="bg-amber-400/20 text-amber-300 text-[9px] font-black rounded-md px-1.5 py-0.5 border border-amber-400/30">
+                Transição
+              </span>
+            </button>
+          )}
+
+          {/* 14. Arquivo */}
           <button 
             id="sidebar-item-arquivo"
             onClick={() => {
@@ -1605,6 +1754,21 @@ export default function App() {
               <span>Registo Empresa Gestora</span>
             </button>
           )}
+
+          {/* 14. Segurança & Credenciais (Último lugar da coluna central/sidebar) */}
+          <button 
+            id="sidebar-item-seguranca"
+            onClick={() => setUserProfileModalOpen(true)}
+            className="w-full text-left px-3.5 py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-between gap-2.5 text-emerald-400 hover:text-white hover:bg-slate-800/40 border border-slate-800/80 hover:border-emerald-500/40 bg-slate-900/60 shadow-xs group"
+          >
+            <div className="flex items-center gap-2.5">
+              <img src="/estados-acoes/18-seguranca.png" alt="Segurança" className="w-5 h-5 object-contain shrink-0 group-hover:scale-110 transition-transform" />
+              <span className="font-extrabold">Segurança & Acessos</span>
+            </div>
+            <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-black rounded-md px-1.5 py-0.5 border border-emerald-500/30">
+              Ativo
+            </span>
+          </button>
 
         </nav>
 
@@ -1700,6 +1864,7 @@ export default function App() {
                 {activeSection === "ia_avancada" && "Central de Inteligência Artificial Avançada"}
                 {activeSection === "ia_importacao" && "Assistente de Importação Global por IA (PDF/XLS)"}
                 {activeSection === "contencioso_juridico" && "Resumo de Contencioso & Prazos Legais"}
+                {activeSection === "contencioso_juridico_processos" && "Constituição de Processos Judiciais & Acervo Probatório"}
                 {activeSection === "contencioso_juridico_nd" && "Carta de Não Dívida (Art. 54.º-A do DL 268/94)"}
                 {activeSection === "contencioso_juridico_doc_obrig" && "Documentos Obrigatórios do Condomínio"}
                 {activeSection === "contencioso_juridico_cartas" && "Carta de Cobrança (Notificação AR Regimental)"}
@@ -1748,15 +1913,6 @@ export default function App() {
             </span>
 
             <button
-              onClick={() => setUserProfileModalOpen(true)}
-              className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 shadow-sm hover:scale-105 active:scale-95 shrink-0"
-              title="Aceder ao Submenu Expansível de Segurança"
-            >
-              <img src="/estados-acoes/18-seguranca.png" alt="Segurança" className="h-5 w-5 object-contain shrink-0" />
-              <span className="hidden sm:inline">Segurança</span>
-            </button>
-
-            <button
               id="header-btn-logout"
               onClick={() => handleSecureLogout()}
               className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white border border-red-500 text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 shadow-sm hover:scale-105 active:scale-95 shrink-0"
@@ -1768,115 +1924,117 @@ export default function App() {
           </div>
         </header>
 
-        {/* PAINEL DE CONTROLO DO SIMULADOR E PERFIS (RECOLHÍVEL EM MOBILE/DESKTOP) */}
-        <div className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 md:px-8 py-2 md:py-3.5 no-print shrink-0 transition-colors duration-300">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center space-x-2">
-              <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
-              <span className="text-[10px] font-black tracking-wider text-slate-500 dark:text-slate-400 uppercase">
-                Seletor de Perfil & Simulador PWA
-              </span>
+        {/* PAINEL DE CONTROLO DO SIMULADOR E PERFIS (CONDICIONADO AO MODO DE TESTES ATIVADO NO MENU SEGURANÇA) */}
+        {showTestingBar && (
+          <div className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-6 md:px-8 py-2 md:py-3.5 no-print shrink-0 transition-colors duration-300">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                <span className="text-[10px] font-black tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+                  Seletor de Perfil & Simulador PWA (Modo de Teste)
+                </span>
+              </div>
+              
+              <button
+                onClick={() => setSimulatorBarCollapsed(!simulatorBarCollapsed)}
+                className="p-1 px-2.5 text-[10px] font-bold rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border border-slate-300 dark:border-slate-700 shadow-xs"
+                title={simulatorBarCollapsed ? "Expandir Seletor de Perfis" : "Recolher Seletor de Perfis"}
+              >
+                <span>{simulatorBarCollapsed ? "Expandir Painel" : "Recolher Painel"}</span>
+                <i className={`fa-solid ${simulatorBarCollapsed ? "fa-chevron-down" : "fa-chevron-up"} text-[9px]`}></i>
+              </button>
             </div>
-            
-            <button
-              onClick={() => setSimulatorBarCollapsed(!simulatorBarCollapsed)}
-              className="p-1 px-2.5 text-[10px] font-bold rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border border-slate-300 dark:border-slate-700 shadow-xs"
-              title={simulatorBarCollapsed ? "Expandir Seletor de Perfis" : "Recolher Seletor de Perfis"}
-            >
-              <span>{simulatorBarCollapsed ? "Expandir Painel" : "Recolher Painel"}</span>
-              <i className={`fa-solid ${simulatorBarCollapsed ? "fa-chevron-down" : "fa-chevron-up"} text-[9px]`}></i>
-            </button>
+
+            {!simulatorBarCollapsed && (
+              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-3">
+                {/* View Mode Toggle */}
+                <div className="flex items-center space-x-2 bg-white dark:bg-slate-950 p-1 rounded-xl border dark:border-slate-800/80 shadow-sm text-xs">
+                  <button
+                    onClick={() => setViewMode("BROWSER")}
+                    className={`px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 transition-colors cursor-pointer ${viewMode === "BROWSER" ? "bg-slate-900 dark:bg-slate-800 text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+                  >
+                    <i className="fa-solid fa-desktop text-[11px]"></i>
+                    <span>💻 Navegador Web</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode("PWA")}
+                    className={`px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 transition-colors cursor-pointer ${viewMode === "PWA" ? `${getColorClasses("bg")} text-white` : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+                  >
+                    <i className="fa-solid fa-mobile-screen text-[11px]"></i>
+                    <span>📱 Simulador PWA</span>
+                  </button>
+                </div>
+
+                {/* Profiles selector */}
+                <div className="flex flex-wrap items-center gap-1.5 bg-white dark:bg-slate-950 p-1.5 rounded-xl border dark:border-slate-800/80 shadow-sm text-[10px] font-bold max-w-full overflow-x-auto">
+                  <button 
+                    onClick={() => handleProfileChange("ADMIN")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "ADMIN" ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Administrador (Empresa Gestora) - Perfil Máximo"
+                  >
+                    👑 Admin
+                  </button>
+                  <button 
+                    onClick={() => handleProfileChange("EMPRESA_GESTORA")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "EMPRESA_GESTORA" ? "bg-violet-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Empresa Gestora - Perfil Máximo de Backoffice"
+                  >
+                    🏢 Gestora
+                  </button>
+                  <button 
+                    onClick={() => handleProfileChange("USER")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "USER" ? "bg-emerald-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Condómino (Proprietário) - PWA + Backoffice Limitado"
+                  >
+                    🏠 Condómino
+                  </button>
+                  <button 
+                    onClick={() => handleProfileChange("INQUILINO")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "INQUILINO" ? "bg-amber-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Inquilino / Arrendatário - Sem acesso a dados financeiros"
+                  >
+                    🔑 Inquilino
+                  </button>
+                  <button 
+                    onClick={() => handleProfileChange("TECNICO")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "TECNICO" ? "bg-amber-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Técnico de Manutenção - PWA + Backoffice Limitado"
+                  >
+                    🔍 Técnico
+                  </button>
+                  <button 
+                    onClick={() => handleProfileChange("LIMPEZAS")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "LIMPEZAS" ? "bg-teal-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Empresa de Limpeza - PWA Limitado"
+                  >
+                    🧹 Limpezas
+                  </button>
+                  <button 
+                    onClick={() => handleProfileChange("JURIDICO")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "JURIDICO" ? "bg-red-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Perfil Jurídico - Contencioso e Contratos"
+                  >
+                    ⚖️ Jurídico
+                  </button>
+                  <button 
+                    onClick={() => handleProfileChange("AUDITOR")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "AUDITOR" ? "bg-indigo-500 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Auditor Interno (Opcional) - Apenas Consulta"
+                  >
+                    🕵️ Auditor
+                  </button>
+                  <button 
+                    onClick={() => handleProfileChange("CONTABILISTA")}
+                    className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "CONTABILISTA" ? "bg-rose-500 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                    title="Contabilista (Opcional) - Validação e Extratos"
+                  >
+                    📈 Contabilista
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-
-          {!simulatorBarCollapsed && (
-            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-3">
-              {/* View Mode Toggle */}
-              <div className="flex items-center space-x-2 bg-white dark:bg-slate-950 p-1 rounded-xl border dark:border-slate-800/80 shadow-sm text-xs">
-                <button
-                  onClick={() => setViewMode("BROWSER")}
-                  className={`px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 transition-colors cursor-pointer ${viewMode === "BROWSER" ? "bg-slate-900 dark:bg-slate-800 text-white" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
-                >
-                  <i className="fa-solid fa-desktop text-[11px]"></i>
-                  <span>💻 Navegador Web</span>
-                </button>
-                <button
-                  onClick={() => setViewMode("PWA")}
-                  className={`px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 transition-colors cursor-pointer ${viewMode === "PWA" ? `${getColorClasses("bg")} text-white` : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
-                >
-                  <i className="fa-solid fa-mobile-screen text-[11px]"></i>
-                  <span>📱 Simulador PWA</span>
-                </button>
-              </div>
-
-              {/* Profiles selector */}
-              <div className="flex flex-wrap items-center gap-1.5 bg-white dark:bg-slate-950 p-1.5 rounded-xl border dark:border-slate-800/80 shadow-sm text-[10px] font-bold max-w-full overflow-x-auto">
-                <button 
-                  onClick={() => handleProfileChange("ADMIN")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "ADMIN" ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Administrador (Empresa Gestora) - Perfil Máximo"
-                >
-                  👑 Admin
-                </button>
-                <button 
-                  onClick={() => handleProfileChange("EMPRESA_GESTORA")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "EMPRESA_GESTORA" ? "bg-violet-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Empresa Gestora - Perfil Máximo de Backoffice"
-                >
-                  🏢 Gestora
-                </button>
-                <button 
-                  onClick={() => handleProfileChange("USER")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "USER" ? "bg-emerald-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Condómino (Proprietário) - PWA + Backoffice Limitado"
-                >
-                  🏠 Condómino
-                </button>
-                <button 
-                  onClick={() => handleProfileChange("INQUILINO")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "INQUILINO" ? "bg-amber-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Inquilino / Arrendatário - Sem acesso a dados financeiros"
-                >
-                  🔑 Inquilino
-                </button>
-                <button 
-                  onClick={() => handleProfileChange("TECNICO")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "TECNICO" ? "bg-amber-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Técnico de Manutenção - PWA + Backoffice Limitado"
-                >
-                  🔍 Técnico
-                </button>
-                <button 
-                  onClick={() => handleProfileChange("LIMPEZAS")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "LIMPEZAS" ? "bg-teal-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Empresa de Limpeza - PWA Limitado"
-                >
-                  🧹 Limpezas
-                </button>
-                <button 
-                  onClick={() => handleProfileChange("JURIDICO")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "JURIDICO" ? "bg-red-600 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Perfil Jurídico - Contencioso e Contratos"
-                >
-                  ⚖️ Jurídico
-                </button>
-                <button 
-                  onClick={() => handleProfileChange("AUDITOR")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "AUDITOR" ? "bg-indigo-500 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Auditor Interno (Opcional) - Apenas Consulta"
-                >
-                  🕵️ Auditor
-                </button>
-                <button 
-                  onClick={() => handleProfileChange("CONTABILISTA")}
-                  className={`px-2 py-1 rounded transition-all cursor-pointer ${loggedUser.role === "CONTABILISTA" ? "bg-rose-500 text-white" : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
-                  title="Contabilista (Opcional) - Validação e Extratos"
-                >
-                  📈 Contabilista
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Conteúdo Dinâmico (Responsivo para Telemóveis e Desktops) */}
         <div className="flex-grow p-3 sm:p-5 md:p-8 overflow-y-auto">
@@ -2068,6 +2226,59 @@ export default function App() {
             />
           )}
 
+          {activeSection === "agendador_automatico" && (
+            <AgendadorAutomatico 
+              predio={predioAtivo}
+              fracoes={fracoes}
+              loggedUser={loggedUser}
+            />
+          )}
+
+          {(activeSection === "agenda_notificacoes" || activeSection === "envios_programados") && (
+            <EnviosProgramados 
+              predio={predioAtivo}
+              fracoes={fracoes}
+              avisos={avisos}
+              loggedUser={loggedUser}
+            />
+          )}
+
+          {(activeSection === "gestao_sinistros" || activeSection === "fracoes_sinistros" || activeSection === "seguros_sinistros") && (
+            <GestaoSinistrosSeguros 
+              predio={predioAtivo}
+              fracoes={fracoes}
+              loggedUser={loggedUser}
+              onUpdateFracoes={handleUpdateFracoes}
+            />
+          )}
+
+          {activeSection === "agenda_manutencao" && (
+            <AgendaManutencao 
+              predio={predioAtivo}
+              loggedUser={loggedUser}
+            />
+          )}
+
+          {activeSection === "mural_reservas" && (
+            <MuralDigitalReservas 
+              predio={predioAtivo}
+              fracoes={fracoes}
+              loggedUser={loggedUser}
+            />
+          )}
+
+          {activeSection === "ocr_faturas" && (
+            <LeitorAnexosIA 
+              predio={predioAtivo}
+              fracoes={fracoes}
+              fornecedores={fornecedores}
+              onMovimentoCriado={(novoMov) => {
+                setMovements(prev => [novoMov, ...prev]);
+                alert("✨ Despesa/Movimento registado automaticamente pela IA nos Movimentos!");
+              }}
+            />
+          )}
+
           {activeSection === "assembleias" && (
             <GestaoAssembleias 
               predio={predioAtivo} 
@@ -2195,7 +2406,7 @@ export default function App() {
             />
           )}
 
-          {["contencioso_juridico", "contencioso_juridico_nd", "contencioso_juridico_doc_obrig", "contencioso_juridico_cartas", "contencioso_juridico_bni", "contencioso_juridico_regulamento", "contencioso_juridico_estatutos", "contencioso_juridico_ia"].includes(activeSection) && (
+          {["contencioso_juridico", "contencioso_juridico_processos", "contencioso_juridico_nd", "contencioso_juridico_doc_obrig", "contencioso_juridico_cartas", "contencioso_juridico_bni", "contencioso_juridico_regulamento", "contencioso_juridico_estatutos", "contencioso_juridico_ia"].includes(activeSection) && (
             <ContenciosoJuridico 
               predio={predioAtivo}
               fracoes={fracoes}
@@ -2203,6 +2414,7 @@ export default function App() {
               loggedUser={loggedUser}
               onAddDocumento={handleAddDocumento}
               initialTab={
+                activeSection === "contencioso_juridico_processos" ? "constituicao_processos" :
                 activeSection === "contencioso_juridico_nd" ? "carta_nao_divida" :
                 activeSection === "contencioso_juridico_doc_obrig" ? "documentos_obrigatorios" :
                 activeSection === "contencioso_juridico_cartas" ? "cartasar" :
@@ -2249,6 +2461,31 @@ export default function App() {
             />
           )}
 
+          {["minutas_oficiais", "simulador_emails", "pasta_provisoria"].includes(activeSection) && (
+            <CentralDocumentosMinutas 
+              predio={predioAtivo}
+              fracoes={fracoes}
+              loggedUser={loggedUser}
+              contas={contas}
+              onOpenArranque={() => setActiveSection("configuracao_arranque")}
+            />
+          )}
+
+          {["configuracao_arranque", "arranque_saldos", "saldos_iniciais"].includes(activeSection) && (
+            <ConfiguracaoArranqueSaldos 
+              predio={predioAtivo}
+              fracoes={fracoes}
+              contas={contas}
+              setContas={setContas}
+              movements={movements}
+              setMovements={setMovements}
+              avisos={avisos}
+              setAvisos={setAvisos}
+              loggedUser={loggedUser}
+              onConcluir={() => setActiveSection("painel")}
+            />
+          )}
+
           {activeSection === "multi_condominio" && (
             <MultiCondominio 
               predios={predios}
@@ -2274,6 +2511,8 @@ export default function App() {
         loggedUser={loggedUser}
         biometricsEnabled={biometricsEnabled}
         setBiometricsEnabled={setBiometricsEnabled}
+        showTestingBar={showTestingBar}
+        setShowTestingBar={setShowTestingBar}
       />
 
       {/* GLOBAL SENDING REACTION MODAL */}

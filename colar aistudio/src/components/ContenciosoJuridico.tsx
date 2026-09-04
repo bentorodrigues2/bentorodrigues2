@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import { Predio, Fracao, Aviso, LoggedUser } from "../types";
+import { Predio, Fracao, Aviso, LoggedUser, ProcessoJuridico } from "../types";
 import { formatDatePT, generateAndDownloadPdf } from "../utils";
+import { processosJudiciaisIniciais } from "../data";
+import { ConstituicaoProcessosJuridicos } from "./ConstituicaoProcessosJuridicos";
 
 interface ContenciosoJuridicoProps {
   predio: Predio;
   fracoes: Fracao[];
   avisos: Aviso[];
   loggedUser: LoggedUser;
-  initialTab?: "geral" | "carta_nao_divida" | "cartasar" | "injuncões" | "regulamento" | "estatutos" | "documentos_obrigatorios" | "assistente_ia";
+  initialTab?: "geral" | "constituicao_processos" | "carta_nao_divida" | "cartasar" | "injuncões" | "regulamento" | "estatutos" | "documentos_obrigatorios" | "assistente_ia";
   onAddDocumento?: (novoDoc: any) => void;
 }
 
@@ -19,7 +21,7 @@ export function ContenciosoJuridico({
   initialTab,
   onAddDocumento
 }: ContenciosoJuridicoProps) {
-  const [activeTab, setActiveTab] = useState<"geral" | "carta_nao_divida" | "cartasar" | "injuncões" | "regulamento" | "estatutos" | "documentos_obrigatorios" | "assistente_ia">(
+  const [activeTab, setActiveTab] = useState<"geral" | "constituicao_processos" | "carta_nao_divida" | "cartasar" | "injuncões" | "regulamento" | "estatutos" | "documentos_obrigatorios" | "assistente_ia">(
     (initialTab as any) || "geral"
   );
 
@@ -29,6 +31,9 @@ export function ContenciosoJuridico({
       setActiveTab(initialTab);
     }
   }, [initialTab]);
+
+  // Shared legal processes state
+  const [processosState, setProcessosState] = useState<ProcessoJuridico[]>(processosJudiciaisIniciais);
   const [selectedFracaoId, setSelectedFracaoId] = useState<string>("");
   const [interestRate, setInterestRate] = useState<number>(4.0); // Default 4% annual interest
   const [printedDoc, setPrintedDoc] = useState<boolean>(false);
@@ -512,17 +517,67 @@ ${formatDatePT(anchorDate.toISOString().split("T")[0])}`);
       )}
 
       {/* Top Title Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center">
             <i className="fa-solid fa-scale-balanced text-red-500 mr-2.5"></i>
             Gestão Contenciosa & Jurídica (Recuperação de Dívidas)
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Controlo automático do estado de cobrança de quotas, inibição de direitos de voto, cartas de notificação regulamentares e requerimentos de injunção civil.
+            Controlo automático do estado de cobrança de quotas, constituição de processos com acervo probatório (recibos AR, prints WhatsApp, fotografias), minutas de injunção civil e estatutos.
           </p>
         </div>
       </div>
+
+      {/* Modern CondoManager AI Horizontal Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800 scrollbar-thin">
+        {[
+          { id: "geral", label: "Resumo Contencioso", icon: "fa-chart-pie" },
+          { id: "constituicao_processos", label: "Processos & Provas Judiciais", icon: "fa-gavel", badge: `${processosState.length}` },
+          { id: "carta_nao_divida", label: "Carta Não Dívida", icon: "fa-certificate" },
+          { id: "cartasar", label: "Cartas Cobrança AR", icon: "fa-envelope-open-text" },
+          { id: "injuncões", label: "Injunção BNI", icon: "fa-scale-unbalanced" },
+          { id: "documentos_obrigatorios", label: "Doc. Obrigatórios", icon: "fa-folder-closed" },
+          { id: "regulamento", label: "Regulamento", icon: "fa-book-bookmark" },
+          { id: "estatutos", label: "Estatutos", icon: "fa-landmark" },
+          { id: "assistente_ia", label: "Assistente Jurídico IA", icon: "fa-wand-magic-sparkles" }
+        ].map(tab => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
+                isActive
+                  ? "bg-emerald-600 text-white shadow-sm border border-emerald-500"
+                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-900/60 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800"
+              }`}
+            >
+              <i className={`fa-solid ${tab.icon} ${isActive ? "text-white" : "text-emerald-500"}`}></i>
+              <span>{tab.label}</span>
+              {tab.badge && (
+                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                  isActive ? "bg-white/20 text-white" : "bg-emerald-500/20 text-emerald-400"
+                }`}>
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* --- Tab: Constituição de Processos Judiciais & Acervo Probatório --- */}
+      {activeTab === "constituicao_processos" && (
+        <ConstituicaoProcessosJuridicos
+          predio={predio}
+          fracoes={fracoes}
+          loggedUser={loggedUser}
+          processos={processosState}
+          setProcessos={setProcessosState}
+          onAddDocumento={onAddDocumento}
+        />
+      )}
 
       {/* --- Tab 1: Resumo Geral e Estados Automáticos --- */}
       {activeTab === "geral" && (

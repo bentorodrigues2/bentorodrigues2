@@ -1754,49 +1754,92 @@ export function GestaoFracoes({
             </div>
 
             {/* Seguro de Incêndio & Apólice Anual (Artigo 1429.º C.Civil) */}
-            <div className="bg-amber-50/40 p-4 rounded-xl border border-amber-200 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/60 pb-2">
-                <div className="flex items-center space-x-2">
-                  <i className="fa-solid fa-shield-halved text-amber-600 text-sm"></i>
-                  <h4 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
-                    Seguro Obrigatorio de Incendio / Multirriscos (Artigo 1429.º C.C.)
-                  </h4>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-[10px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-amber-300 text-amber-900">
-                    {selectedFracao.seguradora || "Fidelidade"} • Apólice: {selectedFracao.apolice_num || "987654321"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setFireInsuranceModalFracao(selectedFracao)}
-                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
-                  >
-                    <i className="fa-solid fa-paper-plane text-[9px]"></i>
-                    <span>Simular E-mail Pedido de Apólice</span>
-                  </button>
-                </div>
-              </div>
+            {(() => {
+              const isInsuranceMissing = !selectedFracao.apolice_num || selectedFracao.apolice_num.trim() === "" || !selectedFracao.seguradora;
+              const isInsuranceExpired = selectedFracao.apolice_validade ? new Date(selectedFracao.apolice_validade) < new Date() : true;
+              const isAlertRequired = isInsuranceMissing || isInsuranceExpired;
 
-              <div className="flex items-center justify-between text-xs text-amber-900 pt-1">
-                <label className="flex items-center space-x-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={selectedFracao.solicitacao_email_incendio ?? true}
-                    onChange={(e) => {
-                      const updated = fracoes.map(f => f.id_fracao === selectedFracao.id_fracao ? { ...f, solicitacao_email_incendio: e.target.checked } : f);
-                      onUpdateFracoes(updated);
-                    }}
-                    className="h-4 w-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
-                  />
-                  <span className="font-semibold text-slate-800">
-                    Solicitação por e-mail automatizada (Pedido anual de Apólice de Incêndio a 02/01)
-                  </span>
-                </label>
-                <span className="text-[10px] text-slate-500 font-mono">
-                  Próxima Notificação Programada: <strong>02/01/2027</strong>
-                </span>
-              </div>
-            </div>
+              return (
+                <div className={`p-4 rounded-xl border space-y-3 transition-all ${
+                  isAlertRequired 
+                    ? 'bg-red-50/50 border-red-300 ring-1 ring-red-500/20' 
+                    : 'bg-amber-50/40 border-amber-200'
+                }`}>
+                  {/* Chamada de Atenção com Chaveta Vermelha */}
+                  {isAlertRequired && (
+                    <div className="border-l-4 border-red-600 bg-red-100/70 p-3 rounded-r-xl border border-r-red-200 border-y-red-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start sm:items-center gap-2.5">
+                        <div className="bg-red-600 text-white font-black text-[10px] px-2 py-0.5 rounded uppercase tracking-wider shrink-0 flex items-center gap-1 shadow-xs">
+                          <i className="fa-solid fa-triangle-exclamation"></i>
+                          <span>Atenção!</span>
+                        </div>
+                        <div className="text-xs text-red-950 font-bold">
+                          {isInsuranceMissing 
+                            ? "Apólice de Seguro Obrigatório Por Receber / Não Apresentada!" 
+                            : `Seguro Obrigatório de Incêndio Fora de Validade (Expirado a ${selectedFracao.apolice_validade})!`}
+                          <span className="block text-[10px] text-red-800 font-normal mt-0.5">
+                            O Artigo 1429.º do Código Civil determina a obrigatoriedade do seguro contra risco de incêndio. A administração deve notificar o condómino para regularização imediata.
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setFireInsuranceModalFracao(selectedFracao)}
+                        className="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-xs transition-all shrink-0 cursor-pointer flex items-center gap-1.5 self-start sm:self-center"
+                      >
+                        <i className="fa-solid fa-paper-plane text-xs"></i>
+                        <span>Notificar Condómino</span>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/60 pb-2">
+                    <div className="flex items-center space-x-2">
+                      <i className={`fa-solid fa-shield-halved ${isAlertRequired ? 'text-red-600' : 'text-amber-600'} text-sm`}></i>
+                      <h4 className={`text-xs font-bold ${isAlertRequired ? 'text-red-950' : 'text-amber-950'} uppercase tracking-wider`}>
+                        Seguro Obrigatório de Incêndio / Multirriscos (Artigo 1429.º C.C.)
+                      </h4>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-[10px] font-mono font-bold bg-white px-2 py-0.5 rounded border ${isAlertRequired ? 'border-red-300 text-red-900' : 'border-amber-300 text-amber-900'}`}>
+                        {selectedFracao.seguradora || "Não Fornecida"} • Apólice: {selectedFracao.apolice_num || "Pendente"}
+                      </span>
+                      {!isAlertRequired && (
+                        <button
+                          type="button"
+                          onClick={() => setFireInsuranceModalFracao(selectedFracao)}
+                          className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] px-2.5 py-1 rounded transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                        >
+                          <i className="fa-solid fa-paper-plane text-[9px]"></i>
+                          <span>Simular E-mail Pedido de Apólice</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-amber-900 pt-1">
+                    <label className="flex items-center space-x-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={selectedFracao.solicitacao_email_incendio ?? true}
+                        onChange={(e) => {
+                          const updated = fracoes.map(f => f.id_fracao === selectedFracao.id_fracao ? { ...f, solicitacao_email_incendio: e.target.checked } : f);
+                          onUpdateFracoes(updated);
+                        }}
+                        className="h-4 w-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
+                      />
+                      <span className="font-semibold text-slate-800">
+                        Solicitação por e-mail automatizada (Pedido anual de Apólice de Incêndio a 02/01)
+                      </span>
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      Próxima Notificação Programada: <strong>02/01/2027</strong>
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })()}

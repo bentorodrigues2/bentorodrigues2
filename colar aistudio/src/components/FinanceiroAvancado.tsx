@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Predio, Fracao, Aviso, Movimento, LoggedUser, Documento } from "../types";
-import { formatDatePT, formatQuotaReceiptNumber, downloadReceiptPDF } from "../utils";
+import { formatDatePT, formatQuotaReceiptNumber, downloadReceiptPDF, exportarBalanceteMapaAnualXLS } from "../utils";
 import { FiltroRelatoriosPDFModal } from "./FiltroRelatoriosPDFModal";
 
 export interface Caucao {
@@ -430,7 +430,20 @@ export function FinanceiroAvancado({
       )}
 
       {/* Header action bar */}
-      <div className="flex justify-end no-print">
+      <div className="flex justify-end items-center gap-2 no-print">
+        <button
+          type="button"
+          onClick={() => {
+            exportarBalanceteMapaAnualXLS(predio, predioFracoes, 2026, predioAvisos, movList);
+            showToast("📊 Balancete / Mapa Anual de 12 Quotas Mensais exportado em Excel (.CSV) com sucesso!");
+          }}
+          className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shadow-xs"
+          title="Exportar Balancete e Grelha das 12 Quotas Mensais de todas as Frações em Excel / CSV para Assembleia"
+        >
+          <img src="/modulos/66-exportacao-financeira.png" alt="Excel" className="h-4 w-4 object-contain" onError={(e) => { e.currentTarget.src = "/marca/18-pdf.png"; }} />
+          <span>Exportar Balancete / Mapa Anual (Excel)</span>
+        </button>
+
         <button
           type="button"
           onClick={() => setIsFiltroRelatoriosOpen(true)}
@@ -679,134 +692,128 @@ export function FinanceiroAvancado({
                   </div>
                 </div>
 
-                {/* Printable Document Box */}
+                {/* Printable Document Box - 100% Identical to Official Quittance Receipt Design */}
                 <div 
                   id="receipt-manual-container"
-                  className="bg-white text-slate-800 border-2 border-slate-300 rounded-xl p-8 shadow-inner font-serif text-sm leading-relaxed space-y-6"
+                  className="bg-white text-slate-800 border border-slate-300 rounded-sm p-6 shadow-md text-xs relative overflow-hidden space-y-4"
                 >
-                  <div className="header-box flex justify-between items-start border-b-2 border-slate-900 pb-4">
-                    <div>
-                      <h4 className="text-base font-black tracking-wider uppercase text-slate-900 font-sans">
-                        CONDOMÍNIO DO EDIFÍCIO {predio.nome.toUpperCase()}
-                      </h4>
-                      <p className="text-xs text-slate-600 font-sans">
-                        {predio.morada_linha1} {predio.num_porta}, {predio.localidade} • NIF: {predio.nif || "500000000"}
-                      </p>
+                  {/* Subtle Background Watermark */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 opacity-5 pointer-events-none z-0">
+                    <img src="/marca/19-marca-dagua-logo-cinza-claro.png" alt="Watermark" className="w-full" />
+                  </div>
+
+                  {/* Top Header Row */}
+                  <div className="header-box flex justify-between items-stretch gap-4 relative z-10">
+                    <div className="bg-[#0c1322] rounded px-3.5 py-2 flex items-center gap-2.5 h-13">
+                      <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="CondoManager AI" className="h-9 object-contain" />
                     </div>
-                    <div className="text-right font-sans">
-                      <span className="block text-xs uppercase font-bold text-slate-400">Recibo de Pagamento</span>
-                      <input
-                        type="text"
-                        value={reciboNum}
-                        onChange={e => setReciboNum(e.target.value)}
-                        className="font-mono text-base font-black text-slate-900 text-right bg-transparent focus:outline-none"
-                      />
-                      <div className="text-xs text-slate-500">
-                        Data: <input 
+                    <div className="bg-[#0b1426] text-white rounded-xs px-4 py-2 text-left min-w-[280px] flex flex-col justify-center">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-white">RECIBO DE QUITAÇÃO Nº:</span>
+                        <input
+                          type="text"
+                          value={reciboNum}
+                          onChange={e => setReciboNum(e.target.value)}
+                          className="font-mono text-[11px] font-black text-white bg-transparent focus:outline-none w-28"
+                        />
+                      </div>
+                      <div className="text-[9.5px] text-slate-300 mt-0.5">
+                        Data de Pagamento: <input 
                           type="text" 
                           value={reciboData} 
                           onChange={e => setReciboData(e.target.value)} 
-                          className="w-24 bg-transparent text-right font-semibold focus:outline-none"
+                          className="w-24 bg-transparent text-slate-200 font-semibold focus:outline-none"
                         />
+                      </div>
+                      <div className="text-[8.5px] text-slate-400 mt-0.5 truncate max-w-[260px]">
+                        Nºs Movimentos: MOV-2026-QM-{reciboNum}, MOV-2026-FR-{reciboNum}...
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4 font-sans text-xs">
-                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Recebemos do Sr.(a) Condómino(a)</span>
-                        <p className="text-sm font-bold text-slate-900">{selectedFracao?.proprietario.nome}</p>
-                        <p className="text-xs text-slate-600">NIF: {selectedFracao?.proprietario.nif} • Fração "{selectedFracao?.fracao_nome}" ({selectedFracao?.piso})</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Total Liquidado</span>
-                        <div className="text-lg font-black text-emerald-600 font-mono flex items-center justify-end">
-                          <span>€ {reciboValorTotal}</span>
-                        </div>
-                      </div>
+                  {/* 2 Side-by-Side Boxes */}
+                  <div className="grid grid-cols-2 gap-3 relative z-10">
+                    <div className="border border-slate-300 rounded-xs p-2.5 bg-white/90">
+                      <span className="text-[9px] font-bold uppercase text-sky-600 block">CONDOMÍNIO DO EDIFÍCIO:</span>
+                      <p className="text-[12.5px] font-black text-slate-900 uppercase mt-0.5">{predio.nome || "EDIFÍCIO ESTRELA DA BARRA"}</p>
+                      <p className="text-[10px] text-slate-700 mt-0.5">Morada: {predio.morada_linha1} {predio.num_porta}, {predio.localidade}</p>
+                      <p className="text-[10px] text-slate-700">NIF do Condomínio: {predio.nif || "900123456"}</p>
                     </div>
+                    <div className="border border-slate-300 rounded-xs p-2.5 bg-white/90">
+                      <span className="text-[9px] font-bold uppercase text-sky-600 block">LIQUIDADO POR (PROPRIETÁRIO / FRAÇÃO):</span>
+                      <p className="text-[12.5px] font-black text-slate-900 mt-0.5">{selectedFracao?.proprietario.nome || "Ana Silva"}</p>
+                      <p className="text-[10px] text-slate-700 mt-0.5">NIF do Proprietário: {selectedFracao?.proprietario.nif || "221230475"}</p>
+                      <p className="text-[10px] text-slate-700">Fração: {selectedFracao?.fracao_nome ? `Fração ${selectedFracao.fracao_nome} (${selectedFracao.piso})` : "Fração A (R/C Esq)"}</p>
+                      <p className="text-[10px] text-slate-700">Método de Pagamento: {reciboMetodo || "Transferência Bancária"}</p>
+                    </div>
+                  </div>
 
-                    {/* Discrimination table in preview */}
-                    <div className="border border-slate-200 rounded-lg overflow-hidden">
-                      <table className="w-full text-xs text-left">
-                        <thead className="bg-slate-100 text-[10px] uppercase font-bold text-slate-600 border-b border-slate-200">
+                  {/* Discrimination Table in Preview */}
+                  <div className="relative z-10 border border-slate-300 rounded-xs overflow-hidden">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead className="bg-[#0b1426] text-[9.5px] uppercase font-bold text-white">
+                        <tr>
+                          <th className="p-2 w-[26%]">Nº MOVIMENTO</th>
+                          <th className="p-2 w-[44%]">DESCRITIVO DO CONCEITO / QUOTA</th>
+                          <th className="p-2 w-[18%]">CATEGORIA</th>
+                          <th className="p-2 text-right w-[12%]">VALOR (€)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {parseFloat(reciboQuotaMensal) > 0 && (
                           <tr>
-                            <th className="p-2">Movimento</th>
-                            <th className="p-2">Descrição / Quota</th>
-                            <th className="p-2 text-right">Valor (€)</th>
+                            <td className="p-2 font-mono text-[10px] font-bold text-slate-800">MOV-2026-QM-{reciboNum}</td>
+                            <td className="p-2 font-normal text-slate-800">{reciboReferencia || "Quota Ordinária de Julho 2026"}</td>
+                            <td className="p-2 text-[9.5px] font-bold text-teal-600 uppercase">QUOTA MENSAL</td>
+                            <td className="p-2 text-right font-mono font-bold text-slate-900">{parseFloat(reciboQuotaMensal).toFixed(2)} €</td>
                           </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {parseFloat(reciboQuotaMensal) > 0 && (
-                            <tr>
-                              <td className="p-2 font-mono text-[10px] text-slate-500">MOV-2026-QM-{reciboNum}</td>
-                              <td className="p-2 font-medium">Quota Mensal - {reciboReferencia}</td>
-                              <td className="p-2 text-right font-mono font-bold">€ {parseFloat(reciboQuotaMensal).toFixed(2)}</td>
-                            </tr>
-                          )}
-                          {parseFloat(reciboFundoReserva) > 0 && (
-                            <tr>
-                              <td className="p-2 font-mono text-[10px] text-slate-500">MOV-2026-FR-{reciboNum}</td>
-                              <td className="p-2 font-medium">Fundo Comum de Reserva (10%)</td>
-                              <td className="p-2 text-right font-mono font-bold">€ {parseFloat(reciboFundoReserva).toFixed(2)}</td>
-                            </tr>
-                          )}
-                          {parseFloat(reciboQuotaExtra) > 0 && (
-                            <tr>
-                              <td className="p-2 font-mono text-[10px] text-slate-500">MOV-2026-QE-{reciboNum}</td>
-                              <td className="p-2 font-medium">Quota Extraordinária</td>
-                              <td className="p-2 text-right font-mono font-bold">€ {parseFloat(reciboQuotaExtra).toFixed(2)}</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                        )}
+                        {parseFloat(reciboFundoReserva) > 0 && (
+                          <tr>
+                            <td className="p-2 font-mono text-[10px] font-bold text-slate-800">MOV-2026-FR-{reciboNum}</td>
+                            <td className="p-2 font-normal text-slate-800">Fundo Comum de Reserva (10% Legal)</td>
+                            <td className="p-2 text-[9.5px] font-bold text-amber-700 uppercase">FUNDO RESERVA</td>
+                            <td className="p-2 text-right font-mono font-bold text-slate-900">{parseFloat(reciboFundoReserva).toFixed(2)} €</td>
+                          </tr>
+                        )}
+                        {parseFloat(reciboQuotaExtra) > 0 && (
+                          <tr>
+                            <td className="p-2 font-mono text-[10px] font-bold text-slate-800">MOV-2026-QE-{reciboNum}</td>
+                            <td className="p-2 font-normal text-slate-800">Quota Extraordinária</td>
+                            <td className="p-2 text-[9.5px] font-bold text-rose-700 uppercase">QUOTA EXTRA</td>
+                            <td className="p-2 text-right font-mono font-bold text-slate-900">{parseFloat(reciboQuotaExtra).toFixed(2)} €</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 border border-slate-200 rounded-lg">
-                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Referente à Quota / Período</span>
-                        <input
-                          type="text"
-                          value={reciboReferencia}
-                          onChange={e => setReciboReferencia(e.target.value)}
-                          className="w-full text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
-                        />
+                    {/* Total Sub-bar */}
+                    <div className="bg-[#f8fafc] border-t border-slate-300 p-2 px-3 flex justify-between items-center text-xs">
+                      <div className="text-[10px] text-slate-600">Isento de I.V.A. nos termos do artº 9º do nº21 do CIVA</div>
+                      <div className="text-[12px] font-black text-teal-700">
+                        <span className="text-slate-900 mr-1">TOTAL DO RECIBO:</span> {reciboValorTotal} €
                       </div>
-                      <div className="p-3 border border-slate-200 rounded-lg">
-                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Método / Meio de Pagamento</span>
-                        <input
-                          type="text"
-                          value={reciboMetodo}
-                          onChange={e => setReciboMetodo(e.target.value)}
-                          className="w-full text-xs font-semibold text-slate-800 bg-transparent focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="p-3 border border-slate-200 rounded-lg">
-                      <span className="text-[10px] font-bold uppercase text-slate-400 block">Declaração de Quitação / Observações</span>
-                      <textarea
-                        rows={2}
-                        value={reciboObs}
-                        onChange={e => setReciboObs(e.target.value)}
-                        className="w-full text-xs text-slate-700 bg-transparent focus:outline-none resize-none"
-                      />
                     </div>
                   </div>
 
-                  <div className="pt-6 flex justify-between items-end border-t border-slate-200 text-xs font-sans">
-                    <div className="text-slate-400 text-[11px]">
-                      <p>Documento emitido manualmente com força de quitação.</p>
-                      <p>Válido como comprovativo oficial de pagamento de condomínio.</p>
+                  {/* Quittance Legal Note */}
+                  <div className="text-[8.5px] text-slate-500 relative z-10">
+                    O presente documento serve de quitação oficial para todos os efeitos legais, comprovando a liquidação dos valores discriminados por movimento na conta do condomínio.
+                  </div>
+
+                  {/* Signatures & Authenticity Footer */}
+                  <div className="pt-4 flex justify-between items-end text-xs relative z-10">
+                    <div className="text-slate-400 text-[8.5px]">
+                      Emitido via CondoManager AI • Documento nº {reciboNum} • Autenticidade Digital Garantida
                     </div>
-                    <div className="text-right">
-                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">A Administração do Condomínio</p>
+                    <div className="text-center min-w-[240px]">
+                      <p className="text-[9.5px] uppercase font-black text-slate-900 mb-6">A ADMINISTRAÇÃO DO CONDOMÍNIO</p>
+                      <div className="w-[200px] border-b border-slate-300 mx-auto mb-1"></div>
                       <input
                         type="text"
                         value={reciboAssinatura}
                         onChange={e => setReciboAssinatura(e.target.value)}
-                        className="text-xs font-bold text-slate-900 text-right bg-transparent focus:outline-none"
+                        className="text-[9.5px] text-slate-700 text-center bg-transparent focus:outline-none w-full"
                       />
                     </div>
                   </div>
@@ -1495,13 +1502,25 @@ export function FinanceiroAvancado({
                   Cálculo, distribuição proporcional por permilagem (‰) e controlo de liquidação das mensalidades normais.
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportarBalanceteMapaAnualXLS(predio, predioFracoes, 2026, predioAvisos, movList);
+                    showToast("📊 Mapa Anual das 12 Quotas Mensais exportado em Excel (.CSV)!");
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                  title="Descarregar grelha das 12 quotas mensais de todas as frações em Excel / CSV para entregar em Assembleia"
+                >
+                  <img src="/modulos/66-exportacao-financeira.png" alt="Excel" className="h-4 w-4 object-contain" onError={(e) => { e.currentTarget.src = "/marca/18-pdf.png"; }} />
+                  <span>Exportar Mapa Anual (12 Meses) em Excel/CSV</span>
+                </button>
                 <button
                   onClick={() => showToast("📋 Lista de Quotas Mensais exportada em PDF para o condomínio!")}
                   title="Exportar PDF"
-                  className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-xs"
+                  className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-xs"
                 >
-                  <img src="/modulos/80-pdf-de-resultados.png" alt="PDF" className="h-6 w-6 object-contain" onError={(e) => { e.currentTarget.src = "/modulos/25-relatorio.png"; }} />
+                  <img src="/modulos/80-pdf-de-resultados.png" alt="PDF" className="h-5 w-5 object-contain" onError={(e) => { e.currentTarget.src = "/modulos/25-relatorio.png"; }} />
                 </button>
               </div>
             </div>

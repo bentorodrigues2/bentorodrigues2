@@ -59,4 +59,3 @@ const icons = [
 
 icons.forEach(i => generateIcon(i.file, i.color, i.type));
 console.log('Icons written successfully!');
-

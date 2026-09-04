@@ -307,8 +307,8 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
       alert("Apenas administradores podem gerir o cadastro de prédios!");
       return;
     }
-    if (!moradaLinha1 || !numPorta || !codigoPostal || !localidade || !nif) {
-      alert("Preencha todos os campos obrigatórios (*)");
+    if (!moradaLinha1 || !numPorta || !codigoPostal || !localidade || !nif || !emailPredio.trim()) {
+      alert("Preencha todos os campos obrigatórios (*), incluindo o E-mail Oficial do Prédio.");
       return;
     }
 
@@ -1325,27 +1325,28 @@ export function GestaoPredios({ predios, onAddPredio, onUpdatePredio, onDeletePr
           </div>
         </div>
 
-        {/* E-MAIL OFICIAL DO PRÉDIO / AUTORESPONDER & IA */}
+        {/* E-MAIL OFICIAL DO PRÉDIO / RESPOSTA OBRIGATÓRIA */}
         <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800/40 space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-black text-emerald-900 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-2">
-              <i className="fa-solid fa-robot text-emerald-600"></i>
-              <span>E-mail Oficial do Prédio (Canal de Autoresponder & Inteligência Artificial)</span>
+              <i className="fa-solid fa-envelope text-emerald-600"></i>
+              <span>E-mail Oficial do Prédio *</span>
             </label>
-            <span className="text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-2xs">
-              🤖 Pré-definido IA & Triagem
+            <span className="text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
+              Obrigatório • Respostas & IA
             </span>
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Este é o e-mail pré-definido para o Autoresponder automático e todas as comunicações ligadas a este prédio. A Inteligência Artificial (Google AI Studio) utilizará este canal para ler as solicitações dos condóminos, consultar o histórico da fração e responder autonomamente com precisão.
+            Insira o e-mail oficial do condomínio (pode ser o e-mail da empresa gestora onde recebem toda a informação e comunicações referentes a este prédio). A Inteligência Artificial (Google AI Studio) e o Autoresponder utilizarão este canal para ler as solicitações dos condóminos, associar comprovativos/faturas, consultar o histórico da fração e responder autonomamente com precisão.
           </p>
           <div className="relative">
-            <i className="fa-solid fa-envelope absolute left-3.5 top-3 text-emerald-600 text-sm"></i>
+            <i className="fa-solid fa-at absolute left-3.5 top-3 text-emerald-600 text-sm"></i>
             <input
               type="email"
+              required
               value={emailPredio}
               onChange={e => setEmailPredio(e.target.value)}
-              placeholder={`Ex: ${nome ? nome.toLowerCase().replace(/[^a-z0-9]/g, ".") : "edificio"}.${codigoPostal ? codigoPostal.split("-")[0] : "condo"}@condomanager.pt`}
+              placeholder={`Ex: ${nome ? nome.toLowerCase().replace(/[^a-z0-9]/g, ".") : "edificio"}.${codigoPostal ? codigoPostal.split("-")[0] : "condo"}@gestaocondominios.pt`}
               className="w-full bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>

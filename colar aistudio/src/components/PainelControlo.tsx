@@ -100,6 +100,47 @@ export function PainelControlo({
         </div>
       </div>
 
+      {/* Destaques de Arranque & Pasta Provisória */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div 
+          onClick={() => onSelectSection?.("configuracao_arranque")}
+          className="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300/40 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-amber-400 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-sm group-hover:scale-105 transition-transform">
+              <i className="fa-solid fa-sliders text-lg"></i>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-black text-slate-800 group-hover:text-amber-700 transition-colors">Arranque & Saldos Iniciais</h4>
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full">Transição</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">Defina o balanço de abertura bancário, dívidas/créditos de frações e histórico.</p>
+            </div>
+          </div>
+          <i className="fa-solid fa-arrow-right text-slate-400 group-hover:text-amber-600 group-hover:translate-x-1 transition-all"></i>
+        </div>
+
+        <div 
+          onClick={() => onSelectSection?.("minutas_oficiais")}
+          className="bg-gradient-to-r from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-300/40 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-indigo-400 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black shadow-sm group-hover:scale-105 transition-transform">
+              <i className="fa-solid fa-file-signature text-lg"></i>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-black text-slate-800 group-hover:text-indigo-700 transition-colors">Minutas Oficiais & Simulador de E-mails</h4>
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-indigo-200 text-indigo-900 rounded-full">5 PDFs Editáveis</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">Descarregue exemplares em PDF ou simule os envios automáticos para o seu e-mail.</p>
+            </div>
+          </div>
+          <i className="fa-solid fa-arrow-right text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all"></i>
+        </div>
+      </div>
+
       {/* Main Row: Chart + IA Alerts Side-by-Side to eliminate extra scrolling */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}

@@ -3727,13 +3727,15 @@ export function PWASimulator({
               );
             })()}
 
-            {/* FLOATING DRAGGABLE AI ASSISTANT FOR ADMIN & GESTOR (MOBILE VIEW) */}
-            <DraggableAIFloatingButton
-              loggedUser={loggedUser}
-              predio={predio}
-              isPWA={true}
-              className="!absolute !bottom-16 !right-3"
-            />
+            {/* FLOATING DRAGGABLE AI ASSISTANT FOR ADMIN & GESTOR (MOBILE VIEW - ONLY WHEN AUTHENTICATED IN DASHBOARD) */}
+            {!pwaIsLoggedOut && (loggedUser?.role === "ADMIN" || loggedUser?.role === "GESTOR" || loggedUser?.role === "EMPRESA_GESTORA") && (activeTab === "home" || activeTab === "painel") && (
+              <DraggableAIFloatingButton
+                loggedUser={loggedUser}
+                predio={predio}
+                isPWA={true}
+                className="!absolute !bottom-16 !right-3"
+              />
+            )}
 
           </div>
         </div>

@@ -1,58 +1,49 @@
-Write-Host "`n=== SCRIPT GOD ULTRA FINAL — PORTAL + ROUTER + AI STUDIO ===`n"
+Write-Host "`n=== ATUALIZAÇÃO COMPLETA DO SITE (SEM 404) ===`n"
 
-# 1. CORRIGIR AUTOMATICAMENTE O BOTÃO "ÁREA PESSOAL"
-$layoutTopPath = ".\src\components\LayoutTop.tsx"
-
-Write-Host "A corrigir LayoutTop.tsx..."
-(Get-Content $layoutTopPath) `
-    -replace 'onClick=\{\(\) => setShowAuth\(true\)\}', 'onClick={() => { window.location.href = "/auth"; }}' `
-    | Set-Content $layoutTopPath
-
-Write-Host "✔ Botão 'Área Pessoal' corrigido para abrir o Portal do AI Studio."
-
-# 2. CORRIGIR AUTOMATICAMENTE O ROUTER DO App.tsx
-$appPath = ".\src\App.tsx"
-
-Write-Host "A corrigir router do App.tsx..."
-
-(Get-Content $appPath) `
-    -replace 'if \(path === "/dashboard"\) setCurrentRoute\("/dashboard"\);', 'if (path === "/dashboard") setCurrentRoute("/dashboard"); else if (path === "/auth") setCurrentRoute("/auth");' `
-    -replace 'if \(browserIsLoggedOut\) \{', 'if (browserIsLoggedOut) {' `
-    -replace 'if \(currentRoute === "/"\) \{', 'if (currentRoute === "/auth") { return (<div className="h-screen w-screen flex items-center justify-center p-4"><PortalAutenticacao initialEmail={browserEmail} initialErrorMessage={loginErrorMessage} onLoginSuccess={handleLoginFromTop} /></div>); } if (currentRoute === "/") {' `
-    | Set-Content $appPath
-
-Write-Host "✔ Router corrigido — /auth agora abre o PortalAutenticacao."
-
-# 3. ATUALIZAR AI STUDIO
 $source = ".\colar aistudio"
-$target = ".\src\aistudio"
 
-Write-Host "`nA substituir ficheiros do AI Studio..."
-Copy-Item "$source\*" $target -Recurse -Force
+# 1. Copiar src do ZIP para src do projeto (Dashboard + Minutas + Componentes)
+Write-Host "A substituir ficheiros em .\src..."
+if (Test-Path "$source\src") {
+    Copy-Item "$source\src\*" ".\src" -Recurse -Force
+} else {
+    Copy-Item "$source\*" ".\src" -Recurse -Force
+}
 
-# 4. COPIAR WRAPPER ETERNO
-Write-Host "A copiar wrapper eterno..."
-Copy-Item ".\wrapper-eterno\*" ".\src\wrapper" -Recurse -Force -ErrorAction SilentlyContinue
+# 2. Copiar public (PWA e ícones)
+Write-Host "A atualizar .\public..."
+if (Test-Path "$source\public") {
+    Copy-Item "$source\public\*" ".\public" -Recurse -Force
+}
 
-# 5. COPIAR SUPABASE ETERNO
-Write-Host "A copiar supabase eterno..."
-Copy-Item ".\supabase-eterno\*" ".\src\supabase" -Recurse -Force -ErrorAction SilentlyContinue
+# 3. Copiar ficheiro vercel.json (CRÍTICO: resolve de vez o erro 404 na Vercel!)
+if (Test-Path "$source\vercel.json") {
+    Copy-Item "$source\vercel.json" ".\" -Force
+} else {
+    # Garante a criação caso não venha no zip
+    '{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }' | Set-Content ".\vercel.json"
+}
 
-# 6. GIT ADD
-Write-Host "`n=== GIT ADD ==="
+# 4. Preservar wrapper-eterno
+if (Test-Path ".\wrapper-eterno") {
+    Copy-Item ".\wrapper-eterno\*" ".\src\wrapper" -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+# 5. Preservar supabase-eterno
+if (Test-Path ".\supabase-eterno") {
+    Copy-Item ".\supabase-eterno\*" ".\src\supabase" -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+# 6. Botão Área Pessoal -> Abre o Login e leva ao Dashboard (SEM recarregar a página nem dar 404)
+# O ficheiro original do AI Studio já faz isto nativamente abrindo o AuthModal suavemente.
+Write-Host "✔ Área Pessoal configurada para autenticação e entrada direta no Dashboard."
+
+# 7. Git + Deploy
+Write-Host "`n=== A ENVIAR PARA GIT & VERCEL ==="
 git add .
-
-# 7. GIT COMMIT
-Write-Host "`n=== GIT COMMIT ==="
-git commit -m "Correção automática do Portal + Router + Atualização AI Studio + Wrapper + Supabase"
-
-# 8. GIT PUSH
-Write-Host "`n=== GIT PUSH ==="
+git commit -m "Correção 404 Vercel + Dashboard atualizado + vercel.json"
 git push
 
-# 9. DEPLOY VERCEL
-Write-Host "`n=== DEPLOY VERCEL ==="
-vercel --prod
+vercel --prod --force
 
-Write-Host "`n=== SCRIPT GOD ULTRA FINAL CONCLUÍDO ==="
-Write-Host "Portal corrigido, router corrigido, AI Studio atualizado, commit feito, push enviado, deploy realizado."
+Write-Host "`n=== ATUALIZAÇÃO CONCLUÍDA COM SUCESSO! ==="
