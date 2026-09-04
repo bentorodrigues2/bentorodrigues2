@@ -58,7 +58,7 @@ export const RoleNavigationMap: Record<UserRole, RoleNavigationConfig> = {
   TECNICO: {
     role: "TECNICO",
     defaultTab: "painel",
-    allowedTabs: ["painel", "predios", "predios_cadastro", "predios_chaves", "manutencao_ocorrencias", "ocorrencias", "limpezas_vistorias", "manutencao_intervencoes", "manutencao_concluidas", "manutencao_agenda", "manutencao_extraordinarias", "inventario_tecnico", "fornecedores", "arquivo", "documentos", "manutencao_arquivo", "vistorias_limpezas"],
+    allowedTabs: ["painel", "predios", "predios_cadastro", "predios_chaves", "manutencao_ocorrencias", "ocorrencias", "limpezas_vistorias", "manutencao_intervencoes", "manutencao_concluidas", "manutencao_agenda", "agenda_manutencao", "manutencao_extraordinarias", "inventario_tecnico", "fornecedores", "arquivo", "documentos", "manutencao_arquivo", "vistorias_limpezas"],
     displayName: "Técnico de Manutenção",
     badgeColor: "bg-amber-500/20 text-amber-400 border-amber-500/30"
   },
@@ -93,14 +93,14 @@ export const RoleNavigationMap: Record<UserRole, RoleNavigationConfig> = {
   USER: {
     role: "USER",
     defaultTab: "portal_condomino",
-    allowedTabs: ["painel", "portal_condomino", "predios", "predios_cadastro", "predios_regras", "fracoes", "fracoes_perfis", "comunicacao_broadcast", "comunicacao_sondagens", "comunicacao_questionarios", "assembleias", "financeiro_extratos", "financeiro_recibos", "vistorias_limpezas", "manutencao_ocorrencias", "ocorrencias", "manutencao_concluidas", "reservas", "arquivo", "documentos"],
+    allowedTabs: ["painel", "portal_condomino", "predios", "predios_cadastro", "predios_regras", "fracoes", "fracoes_perfis", "comunicacao_broadcast", "comunicacao_sondagens", "comunicacao_questionarios", "assembleias", "financeiro_extratos", "financeiro_recibos", "vistorias_limpezas", "manutencao_ocorrencias", "ocorrencias", "manutencao_concluidas", "reservas", "mural_reservas", "arquivo", "documentos"],
     displayName: "Condómino (Proprietário)",
     badgeColor: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
   },
   INQUILINO: {
     role: "INQUILINO",
     defaultTab: "portal_condomino",
-    allowedTabs: ["portal_condomino", "painel", "predios", "predios_cadastro", "predios_regras", "comunicacao_broadcast", "comunicacao_sondagens", "comunicacao_questionarios", "vistorias_limpezas", "manutencao_ocorrencias", "ocorrencias", "manutencao_concluidas", "reservas", "arquivo", "documentos"],
+    allowedTabs: ["portal_condomino", "painel", "predios", "predios_cadastro", "predios_regras", "comunicacao_broadcast", "comunicacao_sondagens", "comunicacao_questionarios", "vistorias_limpezas", "manutencao_ocorrencias", "ocorrencias", "manutencao_concluidas", "reservas", "mural_reservas", "arquivo", "documentos"],
     displayName: "Inquilino / Arrendatário (Sem Acesso Financeiro)",
     badgeColor: "bg-amber-500/20 text-amber-400 border-amber-500/30"
   }
@@ -123,8 +123,8 @@ export function generateClientFingerprint(): string {
   return `fp-${Math.abs(hash).toString(16)}`;
 }
 
-// 5 Minutes Inactivity Timeout in milliseconds (300,000 ms)
-export const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+// 10 Minutes Inactivity Timeout in milliseconds (600,000 ms)
+export const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 
 // Record real-time user activity across site & PWA
 export function recordUserActivity(): void {
@@ -204,14 +204,14 @@ export function validateSession(
       return { valid: true };
     }
 
-    // 2. Check 5 Minutes Idle Timeout
+    // 2. Check 10 Minutes Idle Timeout
     const now = Date.now();
     const idleTime = now - session.lastActivityAt;
     if (idleTime > IDLE_TIMEOUT_MS) {
       purgeSession();
       return { 
         valid: false, 
-        reason: "Sessão expirada por inatividade (5 minutos sem interação). Por favor inicie sessão novamente.", 
+        reason: "Sessão expirada por inatividade (10 minutos sem interação). Por favor inicie sessão novamente.", 
         shouldLogout: true 
       };
     }
@@ -288,4 +288,3 @@ export function isMenuAllowedForRole(role: string, tabsInMenu: string[]): boolea
   }
   return tabsInMenu.some((tab) => isTabAllowedForRole(role, tab));
 }
-

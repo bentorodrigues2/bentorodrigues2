@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { jsPDF } from "jspdf";
 import { Predio, Documento, LoggedUser } from "../types";
-import { formatDatePT, downloadBlob, addPdfHeaderWithLogo } from "../utils";
+import { formatDatePT, downloadBlob, addPdfHeaderWithLogo, downloadReceiptPDF, downloadNotaCobrancaPDF } from "../utils";
 import { triggerSendReaction } from "./SendingReactionModal";
 import { 
   FileText, 
@@ -488,55 +488,517 @@ export function GestaoDocumentos({
 </html>`;
     }
 
+    const isRecibo =
+      doc.tipo.toLowerCase().includes("recibo") ||
+      (doc.categoria && doc.categoria.toLowerCase().includes("recibo")) ||
+      doc.nome.toLowerCase().includes("recibo") ||
+      doc.sub_pasta === "Recibos" ||
+      doc.sub_pasta === "Recibos Quotas extra";
+
+    if (isRecibo) {
+      const isExtra = doc.tipo.toLowerCase().includes("extra") || doc.nome.toLowerCase().includes("extra") || doc.sub_pasta?.includes("extra");
+      
+      const reciboNumExt = "BR2 00195";
+      const dataPagamento = doc.data_upload || "30-07-2026";
+      const buildingName = predio.nome ? predio.nome.toUpperCase() : "EDIFÍCIO ESTRELA DA BARRA";
+      const buildingMorada = `${predio.morada_linha1 || "Rua Bento Rodrigues"} ${predio.num_porta || "2"}, ${predio.localidade || "Seixal"}`;
+      const buildingNif = predio.nif || "900123456";
+
+      const propNome = "Ana Silva";
+      const propNif = "221230475";
+      const fracaoIdent = "Fração A (R/C Esq)";
+      const metodoPag = "Transferência Bancária";
+
+      const valorQM = 32.14;
+      const valorFR = 3.21;
+      const valorQE = 120.00;
+      const valorTotal = isExtra ? valorQE : (valorQM + valorFR);
+      const valorTotalDisplay = valorTotal.toFixed(2);
+
+      const movQM = `MOV-2026-QM-${reciboNumExt}`;
+      const movFR = `MOV-2026-FR-${reciboNumExt}`;
+      const movQE = `MOV-2026-QE-${reciboNumExt}`;
+      const movimentosDesc = isExtra ? movQE : `${movQM}, ${movFR}...`;
+
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${doc.nome}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #0f172a; background: #f8fafc; line-height: 1.35; -webkit-print-color-adjust: exact; }
+    .recibo-sheet { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 24px; max-width: 820px; margin: 0 auto; box-shadow: 0 4px 14px rgba(0,0,0,0.06); position: relative; overflow: hidden; }
+    .watermark-bg { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 320px; opacity: 0.05; pointer-events: none; z-index: 0; }
+    .header-row { display: flex; justify-content: space-between; align-items: stretch; gap: 16px; margin-bottom: 16px; position: relative; z-index: 1; }
+    .logo-dark-box { background: #0c1322; border-radius: 4px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; }
+    .logo-dark-box img { height: 38px; object-fit: contain; }
+    .recibo-badge-dark { background: #0b1426; color: #ffffff; border-radius: 2px; padding: 9px 16px; text-align: left; min-width: 320px; display: flex; flex-direction: column; justify-content: center; }
+    .recibo-badge-title { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #ffffff; }
+    .recibo-badge-sub { font-size: 10px; color: #cbd5e1; margin-top: 2px; }
+    
+    .id-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; position: relative; z-index: 1; }
+    .id-box { border: 1px solid #cbd5e1; border-radius: 2px; padding: 9px 12px; background: rgba(255,255,255,0.92); }
+    .id-box-label { font-size: 9.5px; font-weight: bold; color: #0284c7; text-transform: uppercase; letter-spacing: 0.3px; }
+    .id-box-title { font-size: 13px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin-top: 2px; }
+    .id-box-text { font-size: 10.5px; color: #334155; margin-top: 2px; }
+
+    .tabela-recibo { width: 100%; border-collapse: collapse; margin-top: 6px; position: relative; z-index: 1; }
+    .tabela-recibo th { background: #0b1426; color: #ffffff; padding: 6px 10px; font-size: 9.5px; font-weight: bold; text-align: left; text-transform: uppercase; border: 1px solid #0b1426; }
+    .tabela-recibo td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; font-size: 10.5px; }
+    .cat-qm { color: #0d9488; font-weight: bold; font-size: 9.5px; text-transform: uppercase; }
+    .cat-fr { color: #c2410c; font-weight: bold; font-size: 9.5px; text-transform: uppercase; }
+    .cat-qe { color: #be185d; font-weight: bold; font-size: 9.5px; text-transform: uppercase; }
+
+    .total-subbar { background: #f8fafc; border: 1px solid #cbd5e1; border-top: none; padding: 7px 12px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
+    .total-subbar-legal { font-size: 10px; color: #334155; }
+    .total-subbar-val { font-size: 12px; font-weight: 900; color: #0d9488; }
+
+    .quittance-note { font-size: 8.5px; color: #64748b; margin-top: 10px; position: relative; z-index: 1; }
+
+    .footer-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; position: relative; z-index: 1; }
+    .footer-left { font-size: 8.5px; color: #94a3b8; }
+    .footer-right { text-align: center; min-width: 250px; }
+    .footer-sign-title { font-size: 10px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin-bottom: 28px; }
+    .footer-sign-line { width: 230px; border-bottom: 1px solid #cbd5e1; margin: 0 auto 4px auto; }
+    .footer-sign-name { font-size: 9.5px; color: #334155; }
+  </style>
+</head>
+<body>
+  <div class="recibo-sheet">
+    <img src="/marca/19-marca-dagua-logo-cinza-claro.png" class="watermark-bg" alt="Watermark" />
+
+    <!-- Top Header -->
+    <div class="header-row">
+      <div class="logo-dark-box">
+        <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="CondoManager AI" />
+      </div>
+      <div class="recibo-badge-dark">
+        <div class="recibo-badge-title">RECIBO DE PAGAMENTO Nº: ${reciboNumExt}</div>
+        <div class="recibo-badge-sub">Data de Pagamento: ${dataPagamento}</div>
+        <div class="recibo-badge-sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">Nºs Movimentos: ${movimentosDesc}</div>
+      </div>
+    </div>
+
+    <!-- 2 Side-by-Side Cards -->
+    <div class="id-grid">
+      <div class="id-box">
+        <div class="id-box-label">CONDOMÍNIO DO EDIFÍCIO:</div>
+        <div class="id-box-title">${buildingName}</div>
+        <div class="id-box-text">Morada: ${buildingMorada}</div>
+        <div class="id-box-text">NIF do Condomínio: ${buildingNif}</div>
+      </div>
+      <div class="id-box">
+        <div class="id-box-label">LIQUIDADO POR (PROPRIETÁRIO / FRAÇÃO):</div>
+        <div class="id-box-title" style="text-transform: none;">${propNome}</div>
+        <div class="id-box-text">NIF do Proprietário: ${propNif}</div>
+        <div class="id-box-text">Fração: ${fracaoIdent}</div>
+        <div class="id-box-text">Método de Pagamento: ${metodoPag}</div>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <table class="tabela-recibo">
+      <thead>
+        <tr>
+          <th style="width: 25%;">Nº MOVIMENTO</th>
+          <th style="width: 45%;">DESCRITIVO DO CONCEITO / QUOTA</th>
+          <th style="width: 18%;">CATEGORIA</th>
+          <th style="width: 12%; text-align: right;">VALOR (€)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${!isExtra ? `
+        <tr>
+          <td style="font-family: monospace; font-size: 10px; font-weight: bold; color: #1e293b;">${movQM}</td>
+          <td>Quota Ordinária de Julho 2026</td>
+          <td><span class="cat-qm">QUOTA MENSAL</span></td>
+          <td style="text-align: right; font-weight: bold; font-family: monospace;">${valorQM.toFixed(2)} €</td>
+        </tr>
+        <tr>
+          <td style="font-family: monospace; font-size: 10px; font-weight: bold; color: #1e293b;">${movFR}</td>
+          <td>Fundo Comum de Reserva (10% Legal)</td>
+          <td><span class="cat-fr">FUNDO RESERVA</span></td>
+          <td style="text-align: right; font-weight: bold; font-family: monospace;">${valorFR.toFixed(2)} €</td>
+        </tr>
+        ` : `
+        <tr>
+          <td style="font-family: monospace; font-size: 10px; font-weight: bold; color: #1e293b;">${movQE}</td>
+          <td>Quota Extraordinária de Obras e Conservação</td>
+          <td><span class="cat-qe">QUOTA EXTRA</span></td>
+          <td style="text-align: right; font-weight: bold; font-family: monospace;">${valorQE.toFixed(2)} €</td>
+        </tr>
+        `}
+      </tbody>
+    </table>
+
+    <!-- Total Sub-bar -->
+    <div class="total-subbar">
+      <div class="total-subbar-legal">Isento de I.V.A. nos termos do artº 9º do nº21 do CIVA</div>
+      <div class="total-subbar-val"><span style="color: #0f172a; margin-right: 4px;">TOTAL DO RECIBO:</span> ${valorTotalDisplay} €</div>
+    </div>
+
+    <!-- Quittance Legal Note -->
+    <div class="quittance-note">
+      O presente documento serve de quitação oficial para todos os efeitos legais, comprovando a liquidação dos valores discriminados por movimento na conta do condomínio.
+    </div>
+
+    <!-- Signatures & Authenticity Footer -->
+    <div class="footer-row">
+      <div class="footer-left">
+        Emitido via CondoManager AI • Documento nº ${reciboNumExt} • Autenticidade Digital Garantida
+      </div>
+      <div class="footer-right">
+        <div class="footer-sign-title">A ADMINISTRAÇÃO DO CONDOMÍNIO</div>
+        <div class="footer-sign-line"></div>
+        <div class="footer-sign-name">Carlos Administrador - Administrador do Condomínio</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    const isNotaCobranca =
+      doc.tipo.toLowerCase().includes("cobrança") ||
+      doc.tipo.toLowerCase().includes("cobranca") ||
+      (doc.categoria && doc.categoria.toLowerCase().includes("cobrança")) ||
+      doc.nome.toLowerCase().includes("cobranca") ||
+      doc.nome.toLowerCase().includes("aviso_cobranca");
+
+    if (isNotaCobranca) {
+      const reciboNumExt = "BR2 00195";
+      const dataEmissao = doc.data_upload || "30-07-2026";
+      const dataLimite = "08-08-2026";
+      const buildingName = predio.nome ? predio.nome.toUpperCase() : "EDIFÍCIO ESTRELA DA BARRA";
+      const buildingMorada = `${predio.morada_linha1 || "Rua Bento Rodrigues"} ${predio.num_porta || "2"}, ${predio.localidade || "Seixal"}`;
+      const buildingNif = predio.nif || "900123456";
+      const buildingIban = predio.iban || "PT50 0033 0000 12345678901 02";
+      const buildingEmail = predio.email_condominio || "condominio.estrela.barra@condomanager.ai";
+
+      const propNome = "Ana Silva";
+      const propNif = "221230475";
+      const fracaoIdent = "Fração A (R/C Esq)";
+
+      const valorQM = 32.14;
+      const valorFR = 3.21;
+      const valorTotal = valorQM + valorFR;
+      const valorTotalDisplay = valorTotal.toFixed(2);
+
+      const movQM = `MOV-2026-QM-${reciboNumExt}`;
+      const movFR = `MOV-2026-FR-${reciboNumExt}`;
+      const movimentosDesc = `${movQM}, ${movFR}...`;
+
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${doc.nome}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #0f172a; background: #f8fafc; line-height: 1.35; -webkit-print-color-adjust: exact; }
+    .recibo-sheet { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 24px; max-width: 820px; margin: 0 auto; box-shadow: 0 4px 14px rgba(0,0,0,0.06); position: relative; overflow: hidden; }
+    .watermark-bg { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 320px; opacity: 0.05; pointer-events: none; z-index: 0; }
+    .header-row { display: flex; justify-content: space-between; align-items: stretch; gap: 16px; margin-bottom: 16px; position: relative; z-index: 1; }
+    .logo-dark-box { background: #0c1322; border-radius: 4px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; }
+    .logo-dark-box img { height: 38px; object-fit: contain; }
+    .recibo-badge-dark { background: #0b1426; color: #ffffff; border-radius: 2px; padding: 9px 16px; text-align: left; min-width: 320px; display: flex; flex-direction: column; justify-content: center; }
+    .recibo-badge-title { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #ffffff; }
+    .recibo-badge-sub { font-size: 10px; color: #cbd5e1; margin-top: 2px; }
+    
+    .id-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; position: relative; z-index: 1; }
+    .id-box { border: 1px solid #cbd5e1; border-radius: 2px; padding: 9px 12px; background: rgba(255,255,255,0.92); }
+    .id-box-label { font-size: 9.5px; font-weight: bold; color: #0284c7; text-transform: uppercase; letter-spacing: 0.3px; }
+    .id-box-title { font-size: 13px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin-top: 2px; }
+    .id-box-text { font-size: 10.5px; color: #334155; margin-top: 2px; }
+
+    .tabela-recibo { width: 100%; border-collapse: collapse; margin-top: 6px; position: relative; z-index: 1; }
+    .tabela-recibo th { background: #0b1426; color: #ffffff; padding: 6px 10px; font-size: 9.5px; font-weight: bold; text-align: left; text-transform: uppercase; border: 1px solid #0b1426; }
+    .tabela-recibo td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; font-size: 10.5px; }
+    .cat-qm { color: #0d9488; font-weight: bold; font-size: 9.5px; text-transform: uppercase; }
+    .cat-fr { color: #c2410c; font-weight: bold; font-size: 9.5px; text-transform: uppercase; }
+
+    .total-subbar { background: #f8fafc; border: 1px solid #cbd5e1; border-top: none; padding: 7px 12px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
+    .total-subbar-legal { font-size: 10px; color: #334155; }
+    .total-subbar-val { font-size: 12px; font-weight: 900; color: #0d9488; }
+
+    .payment-instructions-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 3px; padding: 10px 14px; margin-top: 12px; position: relative; z-index: 1; font-size: 10px; color: #1e293b; }
+    .payment-instructions-title { font-weight: 900; font-size: 10.5px; text-transform: uppercase; color: #0f172a; margin-bottom: 4px; }
+    .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+    .payment-chip { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 2px; padding: 6px 10px; }
+
+    .footer-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; position: relative; z-index: 1; }
+    .footer-left { font-size: 8.5px; color: #94a3b8; }
+    .footer-right { text-align: center; min-width: 250px; }
+    .footer-sign-title { font-size: 10px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin-bottom: 28px; }
+    .footer-sign-line { width: 230px; border-bottom: 1px solid #cbd5e1; margin: 0 auto 4px auto; }
+    .footer-sign-name { font-size: 9.5px; color: #334155; }
+  </style>
+</head>
+<body>
+  <div class="recibo-sheet">
+    <img src="/marca/19-marca-dagua-logo-cinza-claro.png" class="watermark-bg" alt="Watermark" />
+
+    <!-- Top Header -->
+    <div class="header-row">
+      <div class="logo-dark-box">
+        <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="CondoManager AI" />
+      </div>
+      <div class="recibo-badge-dark">
+        <div class="recibo-badge-title">NOTA DE COBRANÇA Nº: ${reciboNumExt}</div>
+        <div class="recibo-badge-sub">Data de Emissão: ${dataEmissao} • Prazo Limite: ${dataLimite}</div>
+        <div class="recibo-badge-sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">Nºs Movimentos: ${movimentosDesc}</div>
+      </div>
+    </div>
+
+    <!-- 2 Side-by-Side Cards -->
+    <div class="id-grid">
+      <div class="id-box">
+        <div class="id-box-label">CONDOMÍNIO DO EDIFÍCIO:</div>
+        <div class="id-box-title">${buildingName}</div>
+        <div class="id-box-text">Morada: ${buildingMorada}</div>
+        <div class="id-box-text">NIF: ${buildingNif} • Email: ${buildingEmail}</div>
+        <div class="id-box-text" style="font-weight: bold; color: #0f172a;">IBAN do Prédio: ${buildingIban}</div>
+      </div>
+      <div class="id-box">
+        <div class="id-box-label">DESTINATÁRIO (CONDÓMINO / FRAÇÃO):</div>
+        <div class="id-box-title" style="text-transform: none;">${propNome}</div>
+        <div class="id-box-text">NIF do Proprietário: ${propNif}</div>
+        <div class="id-box-text">Fração: ${fracaoIdent}</div>
+        <div class="id-box-text" style="font-weight: bold; color: #0284c7;">Ref. Individual da Fração (IA): BR2-FRA</div>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <table class="tabela-recibo">
+      <thead>
+        <tr>
+          <th style="width: 25%;">Nº MOVIMENTO</th>
+          <th style="width: 45%;">DESCRITIVO DO CONCEITO / QUOTA</th>
+          <th style="width: 18%;">CATEGORIA</th>
+          <th style="width: 12%; text-align: right;">VALOR (€)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family: monospace; font-size: 10px; font-weight: bold; color: #1e293b;">${movQM}</td>
+          <td>Quota Ordinária de Julho 2026</td>
+          <td><span class="cat-qm">QUOTA MENSAL</span></td>
+          <td style="text-align: right; font-weight: bold; font-family: monospace;">${valorQM.toFixed(2)} €</td>
+        </tr>
+        <tr>
+          <td style="font-family: monospace; font-size: 10px; font-weight: bold; color: #1e293b;">${movFR}</td>
+          <td>Fundo Comum de Reserva (10% Legal)</td>
+          <td><span class="cat-fr">FUNDO RESERVA</span></td>
+          <td style="text-align: right; font-weight: bold; font-family: monospace;">${valorFR.toFixed(2)} €</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Total Sub-bar -->
+    <div class="total-subbar">
+      <div class="total-subbar-legal">Isento de I.V.A. nos termos do artº 9º do nº21 do CIVA</div>
+      <div class="total-subbar-val"><span style="color: #0f172a; margin-right: 4px;">TOTAL A PAGAR:</span> ${valorTotalDisplay} €</div>
+    </div>
+
+    <!-- Payment & Submission Instructions -->
+    <div class="payment-instructions-box">
+      <div class="payment-instructions-title">DADOS PARA PAGAMENTO (EXCLUSIVAMENTE TRANSFERÊNCIA BANCÁRIA):</div>
+      <div class="payment-grid">
+        <div class="payment-chip">
+          <div style="font-weight: bold; color: #0284c7; font-size: 9px; text-transform: uppercase;">IBAN do Condomínio (Conta Bancária Oficial):</div>
+          <div style="font-family: monospace; font-weight: bold; font-size: 11.5px; color: #0f172a; margin-top: 2px;">${buildingIban}</div>
+        </div>
+        <div class="payment-chip">
+          <div style="font-weight: bold; color: #0284c7; font-size: 9px; text-transform: uppercase;">Ref. Individual da Fração (Descritivo / IA):</div>
+          <div style="font-family: monospace; font-weight: bold; font-size: 11.5px; color: #0f172a; margin-top: 2px;">BR2-FRA</div>
+        </div>
+      </div>
+      <div style="margin-top: 8px; font-size: 9.5px; color: #475569; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+        <strong>Instruções & Envio de Comprovativos:</strong> Por favor indique obrigatoriamente a referência <strong>BR2-FRA</strong> no descritivo da sua transferência bancária para conciliação automática por IA. Envie o comprovativo para <strong>${buildingEmail}</strong> ou submeta-o diretamente na aplicação <strong>CondoManager AI (App / Portal do Condómino)</strong>.
+      </div>
+    </div>
+
+    <!-- Signatures & Authenticity Footer -->
+    <div class="footer-row">
+      <div class="footer-left">
+        Emitido via CondoManager AI • Documento nº ${reciboNumExt} • Autenticidade Digital Garantida
+      </div>
+      <div class="footer-right">
+        <div class="footer-sign-title">A ADMINISTRAÇÃO DO CONDOMÍNIO</div>
+        <div class="footer-sign-line"></div>
+        <div class="footer-sign-name">Carlos Administrador - Administrador do Condomínio</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    const isCartaAr =
+      doc.tipo.toLowerCase().includes("ar") ||
+      doc.nome.toLowerCase().includes("carta_ar") ||
+      doc.nome.toLowerCase().includes("aviso_rececao");
+
+    if (isCartaAr) {
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${doc.nome}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #0f172a; background: #f8fafc; line-height: 1.35; }
+    .doc-sheet { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 24px; max-width: 820px; margin: 0 auto; box-shadow: 0 4px 14px rgba(0,0,0,0.06); position: relative; }
+    .header-row { display: flex; justify-content: space-between; align-items: stretch; gap: 16px; margin-bottom: 16px; }
+    .logo-dark-box { background: #0c1322; border-radius: 4px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; }
+    .logo-dark-box img { height: 38px; object-fit: contain; }
+    .badge-dark { background: #0b1426; color: #ffffff; border-radius: 2px; padding: 9px 16px; text-align: left; min-width: 300px; display: flex; flex-direction: column; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div class="doc-sheet">
+    <div class="header-row">
+      <div class="logo-dark-box">
+        <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="CondoManager AI" />
+      </div>
+      <div class="badge-dark">
+        <div style="font-size: 12px; font-weight: 900; color: #ffffff;">📮 CTT CORREIOS • AVISO DE RECEÇÃO (AR)</div>
+        <div style="font-size: 10px; color: #cbd5e1; margin-top: 2px;">Registo CTT: RF 892 134 591 PT</div>
+        <div style="font-size: 9.5px; color: #4ade80; font-weight: bold; margin-top: 2px;">✓ ENTREGUE & ASSINADO EM MÃO</div>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 11px; margin-top: 14px;">
+      <div style="background: #f8fafc; padding: 10px 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
+        <strong style="color: #0284c7; text-transform: uppercase; font-size: 9.5px; display: block; margin-bottom: 4px;">Remetente:</strong>
+        Condomínio do Edifício ${predio.nome}<br>
+        ${predio.morada_linha1} ${predio.num_porta}, ${predio.localidade}
+      </div>
+      <div style="background: #f8fafc; padding: 10px 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
+        <strong style="color: #0284c7; text-transform: uppercase; font-size: 9.5px; display: block; margin-bottom: 4px;">Destinatário / Requerido:</strong>
+        Fração em Incumprimento / Devedor<br>
+        Interpelação & Notificação Postal Plena
+      </div>
+    </div>
+    <div style="margin-top: 14px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; font-size: 10.5px; color: #991b1b;">
+      <strong>Certificação Postal:</strong> Entregue ao destinatário em mão • Assinatura conferida nos termos do art. 228.º do CPC para instrução de prova documental.
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
+    const isPrintWhatsApp =
+      doc.tipo.toLowerCase().includes("whatsapp") ||
+      doc.nome.toLowerCase().includes("whatsapp") ||
+      doc.descricao?.toLowerCase().includes("whatsapp");
+
+    if (isPrintWhatsApp) {
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${doc.nome}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 24px; color: #0f172a; background: #efeae2; line-height: 1.4; }
+    .chat-container { max-width: 600px; margin: 0 auto; background: #efeae2; border-radius: 16px; overflow: hidden; border: 1px solid #d1d5db; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .chat-header { background: #075e54; color: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .chat-body { padding: 16px; min-height: 280px; display: flex; flex-direction: column; gap: 12px; }
+    .msg-out { align-self: flex-end; background: #d9fdd3; padding: 8px 12px; border-radius: 8px 0 8px 8px; max-width: 80%; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .msg-in { align-self: flex-start; background: #ffffff; padding: 8px 12px; border-radius: 0 8px 8px 8px; max-width: 80%; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .time { font-size: 9px; color: #667781; text-align: right; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <div>
+        <div style="font-weight: bold; font-size: 13px;">💬 Condómino Fração A (+351 912 345 678)</div>
+        <div style="font-size: 10px; color: #a3e635;">online • Registo de Prova Digital</div>
+      </div>
+      <div style="font-size: 10px; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px;">Autenticado</div>
+    </div>
+    <div class="chat-body">
+      <div class="msg-out">
+        Exmo.(a) Condómino(a), relembramos que a quota de condomínio referente a este mês se encontra pendente. Agradecemos a regularização.
+        <div class="time">10:14 ✓✓</div>
+      </div>
+      <div class="msg-in">
+        Bom dia. Já efetuei a transferência esta manhã e envio o comprovativo em anexo. Cumprimentos.
+        <div class="time">11:30</div>
+      </div>
+      <div class="msg-out">
+        Confirmamos a boa receção. O recibo oficial já foi emitido e arquivado no sistema. Obrigado!
+        <div class="time">11:45 ✓✓</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+    }
+
     return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>${doc.nome}</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 30px; color: #0f172a; line-height: 1.5; }
-    h1 { color: #047857; font-size: 18px; border-bottom: 2px solid #047857; padding-bottom: 6px; margin-top: 0; }
-    .header-box { background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; }
-    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #0f172a; background: #f8fafc; line-height: 1.4; }
+    .doc-sheet { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 24px; max-width: 820px; margin: 0 auto; box-shadow: 0 4px 14px rgba(0,0,0,0.06); position: relative; overflow: hidden; }
+    .watermark-bg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; opacity: 0.05; pointer-events: none; z-index: 0; }
+    .header-row { display: flex; justify-content: space-between; align-items: stretch; gap: 16px; margin-bottom: 16px; position: relative; z-index: 1; }
+    .logo-dark-box { background: #0c1322; border-radius: 4px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; }
+    .logo-dark-box img { height: 38px; object-fit: contain; }
+    .badge-dark { background: #0b1426; color: #ffffff; border-radius: 2px; padding: 9px 16px; text-align: left; min-width: 300px; display: flex; flex-direction: column; justify-content: center; }
+    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; position: relative; z-index: 1; }
     .meta-table td { padding: 6px 10px; border: 1px solid #e2e8f0; }
-    .content-box { background: #ffffff; border: 1px solid #cbd5e1; padding: 16px; border-radius: 8px; min-height: 200px; font-size: 11.5px; }
-    .seal { text-align: center; margin-top: 30px; padding-top: 16px; border-top: 2px dashed #047857; color: #047857; font-weight: bold; font-size: 10.5px; }
+    .content-box { background: #ffffff; border: 1px solid #cbd5e1; padding: 16px; border-radius: 4px; min-height: 160px; font-size: 11.5px; position: relative; z-index: 1; }
+    .seal { text-align: center; margin-top: 24px; padding-top: 14px; border-top: 1px dashed #cbd5e1; color: #334155; font-weight: bold; font-size: 10px; position: relative; z-index: 1; }
   </style>
 </head>
 <body>
-  <div class="header-box">
-    <h1 style="margin:0 0 6px 0;">📄 DOCUMENTO OFICIAL REGISTADO - ${doc.categoria || 'ARQUIVO DIGITAL'}</h1>
-    <p style="margin:0; font-size:11px;"><strong>Condomínio:</strong> ${predio.nome} | <strong>Identificador:</strong> ${doc.id_doc}</p>
-  </div>
+  <div class="doc-sheet">
+    <img src="/marca/19-marca-dagua-logo-cinza-claro.png" class="watermark-bg" alt="Watermark" />
+    <div class="header-row">
+      <div class="logo-dark-box">
+        <img src="/marca/20-Logotipo Horizontal com fundo.png" alt="CondoManager AI" />
+      </div>
+      <div class="badge-dark">
+        <div style="font-size: 12px; font-weight: 900; color: #ffffff; text-transform: uppercase;">DOCUMENTO OFICIAL REGISTADO</div>
+        <div style="font-size: 10px; color: #cbd5e1; margin-top: 2px;">Categoria: ${doc.categoria || 'Arquivo Digital'}</div>
+        <div style="font-size: 9.5px; color: #94a3b8; margin-top: 2px;">ID: ${doc.id_doc}</div>
+      </div>
+    </div>
 
-  <table class="meta-table">
-    <tr>
-      <td><strong>Nome do Ficheiro:</strong> ${doc.nome}</td>
-      <td><strong>Data de Upload:</strong> ${doc.data_upload}</td>
-    </tr>
-    <tr>
-      <td><strong>Categoria / Tema:</strong> ${doc.categoria} • ${doc.tema || 'Geral'}</td>
-      <td><strong>Tamanho:</strong> ${doc.tamanho}</td>
-    </tr>
-    <tr>
-      <td><strong>Sub-pasta / Fornecedor:</strong> ${doc.sub_pasta || doc.fornecedor || 'Geral'}</td>
-      <td><strong>Visibilidade:</strong> ${doc.visibilidade}</td>
-    </tr>
-    <tr>
-      <td colspan="2"><strong>Autor / Registado por:</strong> ${doc.autor || 'Administração'}</td>
-    </tr>
-  </table>
+    <table class="meta-table">
+      <tr>
+        <td style="background:#f8fafc;"><strong>Nome do Ficheiro:</strong> ${doc.nome}</td>
+        <td style="background:#f8fafc;"><strong>Data de Upload:</strong> ${doc.data_upload}</td>
+      </tr>
+      <tr>
+        <td><strong>Categoria / Tema:</strong> ${doc.categoria} • ${doc.tema || 'Geral'}</td>
+        <td><strong>Tamanho:</strong> ${doc.tamanho}</td>
+      </tr>
+      <tr>
+        <td><strong>Sub-pasta:</strong> ${doc.sub_pasta || doc.fornecedor || 'Geral'}</td>
+        <td><strong>Visibilidade:</strong> ${doc.visibilidade}</td>
+      </tr>
+      <tr>
+        <td colspan="2"><strong>Autor / Registado por:</strong> ${doc.autor || 'Administração'}</td>
+      </tr>
+    </table>
 
-  <div class="content-box">
-    <h3 style="margin-top:0; color:#0f172a; font-size:13px;">Resumo & Conteúdo Oficial do Documento</h3>
-    <p>${doc.descricao || "Ficheiro oficial autenticado e armazenado no Arquivo Digital do Condomínio."}</p>
-    <br>
-    <p style="color:#64748b; font-style:italic;">Este documento constitui um registo digital autêntico referente ao edifício ${predio.nome}, certificado pelo sistema CondoManager AI.</p>
-  </div>
+    <div class="content-box">
+      <h3 style="margin-top:0; color:#0f172a; font-size:12.5px;">Resumo & Descritivo Oficial do Documento</h3>
+      <p style="color:#334155; margin:0 0 10px 0;">${doc.descricao || "Ficheiro oficial autenticado e armazenado no Arquivo Digital do Condomínio."}</p>
+      <p style="color:#64748b; font-style:italic; font-size:10.5px; margin:0;">Este documento constitui um registo digital autêntico referente ao edifício ${predio.nome}, certificado pelo sistema CondoManager AI.</p>
+    </div>
 
-  <div class="seal">
-    ✓ CONDOMANAGER AI - DOCUMENTO CERTIFICADO E ARQUIVADO<br>
-    <span style="font-size:9px; color:#475569; font-weight:normal;">Registo Inalterável no Servidor • Emissão: ${new Date().toLocaleDateString('pt-PT')}</span>
+    <div class="seal">
+      ✓ CONDOMANAGER AI • DOCUMENTO CERTIFICADO E ARQUIVADO<br>
+      <span style="font-size:9px; color:#64748b; font-weight:normal;">Registo Inalterável no Servidor • Emissão: ${new Date().toLocaleDateString('pt-PT')}</span>
+    </div>
   </div>
 </body>
 </html>`;
@@ -558,6 +1020,73 @@ export function GestaoDocumentos({
 
   const handleDownloadPdf = (docItem: Documento) => {
     try {
+      const isRecibo = 
+        docItem.tipo.toLowerCase().includes("recibo") ||
+        (docItem.categoria && docItem.categoria.toLowerCase().includes("recibo")) ||
+        docItem.nome.toLowerCase().includes("recibo") ||
+        docItem.sub_pasta === "Recibos" ||
+        docItem.sub_pasta === "Recibos Quotas extra";
+
+      if (isRecibo) {
+        const isExtra = docItem.tipo.toLowerCase().includes("extra") || docItem.nome.toLowerCase().includes("extra") || docItem.sub_pasta?.includes("extra");
+        const reciboNum = "BR2 00195";
+
+        downloadReceiptPDF({
+          reciboNum: reciboNum,
+          dataPagamento: "30-07-2026",
+          movimentoQuotaMensal: !isExtra ? `MOV-2026-QM-${reciboNum}` : undefined,
+          movimentoFundoReserva: !isExtra ? `MOV-2026-FR-${reciboNum}` : undefined,
+          movimentoQuotaExtra: isExtra ? `MOV-2026-QE-${reciboNum}` : undefined,
+          buildingName: predio.nome || "EDIFÍCIO ESTRELA DA BARRA",
+          buildingAddress: `${predio.morada_linha1 || "Rua Bento Rodrigues"} ${predio.num_porta || "2"}, ${predio.localidade || "Seixal"}`,
+          buildingNif: predio.nif || "900123456",
+          proprietarioNome: "Ana Silva",
+          proprietarioNif: "221230475",
+          fracaoIdent: "Fração A (R/C Esq)",
+          metodoPagamento: "Transferência Bancária",
+          quotaMensalVal: !isExtra ? 32.14 : 0,
+          fundoReservaVal: !isExtra ? 3.21 : 0,
+          quotaExtraVal: isExtra ? 120.00 : 0,
+          isQuotaExtra: isExtra,
+          descricaoQuota: !isExtra ? "Quota Ordinária de Julho 2026" : "Quota Extraordinária de Obras e Conservação",
+          adminNome: "Carlos Administrador - Administrador do Condomínio",
+          adminSignatureBase64: localStorage.getItem("admin_signature_digital") || undefined
+        }, docItem.nome);
+        return;
+      }
+
+      const isNotaCobranca =
+        docItem.tipo.toLowerCase().includes("cobrança") ||
+        docItem.tipo.toLowerCase().includes("cobranca") ||
+        (docItem.categoria && docItem.categoria.toLowerCase().includes("cobrança")) ||
+        docItem.nome.toLowerCase().includes("cobranca") ||
+        docItem.nome.toLowerCase().includes("aviso_cobranca");
+
+      if (isNotaCobranca) {
+        const reciboNum = "BR2 00195";
+        downloadNotaCobrancaPDF({
+          reciboNum: reciboNum,
+          dataEmissao: docItem.data_upload || "30-07-2026",
+          dataLimite: "08-08-2026",
+          movimentoQuotaMensal: `MOV-2026-QM-${reciboNum}`,
+          movimentoFundoReserva: `MOV-2026-FR-${reciboNum}`,
+          buildingName: predio.nome || "EDIFÍCIO ESTRELA DA BARRA",
+          buildingAddress: `${predio.morada_linha1 || "Rua Bento Rodrigues"} ${predio.num_porta || "2"}, ${predio.localidade || "Seixal"}`,
+          buildingNif: predio.nif || "900123456",
+          buildingIban: predio.iban || "PT50 0033 0000 12345678901 02",
+          buildingEmail: predio.email_condominio || "condominio.estrela.barra@condomanager.ai",
+          proprietarioNome: "Ana Silva",
+          proprietarioNif: "221230475",
+          fracaoIdent: "Fração A (R/C Esq)",
+          referenciaFracao: "BR2-FRA-A",
+          quotaMensalVal: 32.14,
+          fundoReservaVal: 3.21,
+          adminNome: "Carlos Administrador - Administrador do Condomínio",
+          adminSignatureBase64: localStorage.getItem("admin_signature_digital") || undefined
+        }, docItem.nome);
+        return;
+      }
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -1014,10 +1543,12 @@ export function GestaoDocumentos({
         (d.descricao && d.descricao.toLowerCase().includes(filtroFornecedor.toLowerCase()));
 
       const isPastaPagaDoc = (doc: Documento) => 
-        doc.categoria === "Pasta Paga. Quotas" || 
-        doc.tema === "Pasta Paga. Quotas" || 
-        ["Recibos", "Recibos Quotas extra", "Notas de cobrança"].includes(doc.sub_pasta || "") ||
-        ["Recibo", "Recibo Quotas extra", "Nota de Cobrança"].includes(doc.tipo || "");
+        doc.sub_pasta !== "📁 Pasta Temporária - Teste & Verificação (Marca de Água)" &&
+        !doc.sub_pasta?.startsWith("⚖️ Processos Jurídicos") &&
+        (doc.categoria === "Pasta Paga. Quotas" || 
+         doc.tema === "Pasta Paga. Quotas" || 
+         ["Recibos", "Recibos Quotas extra", "Notas de cobrança"].includes(doc.sub_pasta || "") ||
+         ["Recibo", "Recibo Quotas extra", "Nota de Cobrança"].includes(doc.tipo || ""));
 
       const matchesFolder = !selectedFolder || 
         (selectedFolder === "Pasta Paga. Quotas" ? isPastaPagaDoc(d) : (
@@ -1050,10 +1581,14 @@ export function GestaoDocumentos({
   const folderGroups = useMemo(() => {
     const groups: { [key: string]: Documento[] } = {};
     docsDoTipo.forEach(doc => {
-      const isPastaPaga = doc.categoria === "Pasta Paga. Quotas" || 
-        doc.tema === "Pasta Paga. Quotas" ||
-        ["Recibos", "Recibos Quotas extra", "Notas de cobrança"].includes(doc.sub_pasta || "") ||
-        ["Recibo", "Recibo Quotas extra", "Nota de Cobrança"].includes(doc.tipo || "");
+      const isPastaPaga = (
+        doc.sub_pasta !== "📁 Pasta Temporária - Teste & Verificação (Marca de Água)" &&
+        !doc.sub_pasta?.startsWith("⚖️ Processos Jurídicos") &&
+        (doc.categoria === "Pasta Paga. Quotas" || 
+         doc.tema === "Pasta Paga. Quotas" ||
+         ["Recibos", "Recibos Quotas extra", "Notas de cobrança"].includes(doc.sub_pasta || "") ||
+         ["Recibo", "Recibo Quotas extra", "Nota de Cobrança"].includes(doc.tipo || ""))
+      );
 
       const folderName = isPastaPaga ? "Pasta Paga. Quotas" : (doc.sub_pasta || doc.fornecedor || doc.tema || "Geral");
       if (!groups[folderName]) {
@@ -1577,6 +2112,96 @@ export function GestaoDocumentos({
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* PASTA ESPECIAL: PROCESSOS JURÍDICOS & CONTENCIOSO */}
+          {selectedFolder === "⚖️ Processos Jurídicos & Contencioso" && (
+            <div className="bg-emerald-950/90 border border-emerald-600 rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center justify-between text-[11px] text-emerald-300 font-bold border-b border-emerald-800/80 pb-2">
+                <span className="flex items-center gap-2">
+                  <span>⚖️</span> DOSSIÊS DE PROCESSOS JUDICIAIS, RECIBOS DE CARTAS AR CTT, PRINTS & PROVAS DOCUMENTAIS
+                </span>
+                {busca && (
+                  <button 
+                    onClick={() => setBusca("")}
+                    className="text-amber-300 hover:underline text-[10px]"
+                  >
+                    Limpar pesquisa
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-emerald-200/90 leading-relaxed">
+                Esta pasta do arquivo armazena todos os elementos probatórios recolhidos para ações executivas, injunções do BNI e processos no Julgado de Paz: recibos e avisos de receção de cartas registadas com AR, capturas de ecrã (WhatsApp/e-mails), relatórios fotográficos de danos e atas com força executiva.
+              </p>
+              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                <span className="text-[10px] text-emerald-300 font-bold mr-1">Filtrar por Processo / Prova:</span>
+                {[
+                  { label: "Todos", query: "" },
+                  { label: "Proc. 001 (Fração A - Dívida)", query: "Proc_001" },
+                  { label: "Proc. 002 (Fração D - Obras)", query: "Proc_002" },
+                  { label: "✉️ Recibos AR CTT", query: "AR" },
+                  { label: "💬 Prints & WhatsApp", query: "Prints" },
+                  { label: "📜 Dossiês de Tribunal", query: "Dossie" }
+                ].map(item => (
+                  <button
+                    key={item.label}
+                    onClick={() => setBusca(item.query)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      busca === item.query 
+                        ? "bg-emerald-400 text-slate-950 shadow-sm" 
+                        : "bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 border border-emerald-700"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PASTA ESPECIAL: PASTA TEMPORÁRIA (MARCA DE ÁGUA) */}
+          {selectedFolder === "📁 Pasta Temporária - Teste & Verificação (Marca de Água)" && (
+            <div className="bg-emerald-950/90 border border-emerald-600 rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center justify-between text-[11px] text-emerald-300 font-bold border-b border-emerald-800/80 pb-2">
+                <span className="flex items-center gap-2">
+                  <span>📁</span> PASTA TEMPORÁRIA • EXEMPLARES DE TESTE & VERIFICAÇÃO COM MARCA DE ÁGUA OFICIAL
+                </span>
+                {busca && (
+                  <button 
+                    onClick={() => setBusca("")}
+                    className="text-amber-300 hover:underline text-[10px]"
+                  >
+                    Limpar pesquisa
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-emerald-200/90 leading-relaxed">
+                Contém 1 cópia de cada documento do ecossistema CondoManager AI para consulta rápida, verificação de conformidade e testes de pré-visualização. Todos os documentos incluem a marca de água oficial de validação.
+              </p>
+              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                <span className="text-[10px] text-emerald-300 font-bold mr-1">Filtrar por Tipologia:</span>
+                {[
+                  { label: "Todos os Exemplares", query: "" },
+                  { label: "📄 Recibos de Pagamento", query: "Recibo" },
+                  { label: "📝 Notas de Cobrança", query: "Nota" },
+                  { label: "✉️ Comprovativos AR CTT", query: "Rececao" },
+                  { label: "💬 Prints & Provas", query: "Prints" },
+                  { label: "📸 Fotografias", query: "Fotografia" }
+                ].map(item => (
+                  <button
+                    key={item.label}
+                    onClick={() => setBusca(item.query)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      busca === item.query 
+                        ? "bg-emerald-400 text-slate-950 shadow-sm" 
+                        : "bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 border border-emerald-700"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             </div>
           )}

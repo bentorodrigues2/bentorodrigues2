@@ -11,6 +11,8 @@ interface UserSecurityModalProps {
   biometricsEnabled?: boolean;
   setBiometricsEnabled?: (val: boolean) => void;
   isFirstAccessMode?: boolean;
+  showTestingBar?: boolean;
+  setShowTestingBar?: (val: boolean) => void;
 }
 
 export const UserSecurityModal: React.FC<UserSecurityModalProps> = ({
@@ -19,7 +21,9 @@ export const UserSecurityModal: React.FC<UserSecurityModalProps> = ({
   loggedUser,
   biometricsEnabled = false,
   setBiometricsEnabled,
-  isFirstAccessMode = false
+  isFirstAccessMode = false,
+  showTestingBar,
+  setShowTestingBar
 }) => {
   if (!isOpen) return null;
 
@@ -94,6 +98,8 @@ export const UserSecurityModal: React.FC<UserSecurityModalProps> = ({
               setBiometricsEnabled={setBiometricsEnabled}
               defaultOpen={true}
               isFirstAccessMode={isProvisional}
+              showTestingBar={showTestingBar}
+              setShowTestingBar={setShowTestingBar}
               onPasswordChangeSuccess={() => {
                 onClose();
               }}

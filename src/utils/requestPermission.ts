@@ -18,4 +18,3 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
     return 'denied';
   }
 }
-

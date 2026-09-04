@@ -270,9 +270,10 @@ export function FichaEmpresaGestora({
 
       if (modalGerarPdfAgora) {
         gerarPdfBoasVindasGestor(novoGestor, predios, empresaConfig.nome_empresa, gestoraLogo);
-        showNotification(`Gestor adicionado! E-mail de Boas-Vindas enviado e PDF gerado com sucesso.`);
+        const docName = novoGestor.perfil === "ADMIN" ? "Instrucoes_Acesso_Perfil_Administrador.pdf" : "Instrucoes_Acesso_Perfil_Gestor.pdf";
+        showNotification(`Colaborador adicionado! E-mail de Ativação enviado e ${docName} descarregado com sucesso.`);
       } else {
-        showNotification(`Gestor "${novoGestor.nome}" registado com sucesso!`);
+        showNotification(`Colaborador "${novoGestor.nome}" registado com sucesso!`);
       }
     }
 
@@ -299,8 +300,9 @@ export function FichaEmpresaGestora({
     });
     setGestores(atualizados);
 
+    const docName = gestor.perfil === "ADMIN" ? "Instrucoes_Acesso_Perfil_Administrador.pdf" : "Instrucoes_Acesso_Perfil_Gestor.pdf";
     showNotification(
-      `E-mail de Boas-Vindas enviado para ${gestor.email}! O PDF explicativo com a senha provisória "${gestor.password_provisoria || "Gestor#2026!"}" foi descarregado.`
+      `E-mail de Ativação enviado para ${gestor.email}! O documento oficial "${docName}" com a senha provisória "${gestor.password_provisoria || "Admin#2026!"}" foi descarregado.`
     );
   };
 

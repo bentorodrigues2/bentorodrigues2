@@ -4084,12 +4084,7 @@ export default function PWACondominoView({
         </div>
       )}
 
-      {/* DRAGGABLE GEMINI IA ATIVA BUTTON FOR ADMIN/GESTOR IN PWA */}
-      <DraggableAIFloatingButton
-        loggedUser={loggedUser}
-        predio={predio}
-        isPWA={true}
-      />
+
 
       {/* SWIPE HOME INDICATOR BOTTOM BAR */}
       <div className="h-4 shrink-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center pb-1">

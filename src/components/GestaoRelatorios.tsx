@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Predio, LoggedUser, Movimento, Fracao } from "../types";
-import { generateAndDownloadPdf } from "../utils";
+import { generateAndDownloadPdf, exportarBalanceteMapaAnualXLS } from "../utils";
 import { FiltroRelatoriosPDFModal } from "./FiltroRelatoriosPDFModal";
 
 interface GestaoRelatoriosProps {
@@ -123,14 +123,27 @@ export function GestaoRelatorios({ predio, loggedUser, movimentos = [], fracoes 
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsFiltroModalOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-2 shadow-sm shrink-0"
-        >
-          <img src="/marca/18-pdf.png" alt="PDF" className="h-4 w-4 object-contain" />
-          <span>📊 Filtro Dinâmico (Prédio/Fração/Todas)</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              exportarBalanceteMapaAnualXLS(predio, defaultFracoes, parseInt(anoSelecionado) || 2026, [], defaultMovimentos);
+            }}
+            className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-2 shadow-sm"
+            title="Exportar Grelha das 12 Quotas Mensais de todas as Frações num único ficheiro Excel/CSV"
+          >
+            <img src="/modulos/66-exportacao-financeira.png" alt="Excel" className="h-4 w-4 object-contain" onError={(e) => { e.currentTarget.src = "/marca/18-pdf.png"; }} />
+            <span>📊 Mapa Anual 12 Quotas (.XLSX/.CSV)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsFiltroModalOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-2 shadow-sm shrink-0"
+          >
+            <img src="/marca/18-pdf.png" alt="PDF" className="h-4 w-4 object-contain" />
+            <span>Filtro Dinâmico PDF</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -648,7 +648,7 @@ export function GestaoVistoriasLimpezas({ predio, loggedUser, activeSubSection, 
                   <span className="p-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-xs">
                     <i className="fa-solid fa-wand-magic-sparkles"></i>
                   </span>
-                  <span>Planificação Anual de Vistorias Técnicas (Gerado por IA)</span>
+                  <span>Planificação Anual de Vistorias Técnicas</span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Plano automatizado ajustado à tipologia do condomínio ({predio.nome}): Elevadores, SCIE, Garagem, Bombas de Águas, Cobertura, Coluna Elétrica e Gás.

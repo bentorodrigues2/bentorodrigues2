@@ -238,4 +238,3 @@ AFTER INSERT OR UPDATE ON public.obras
 FOR EACH ROW EXECUTE FUNCTION public.fn_dispatch_pwa_webhook();
 `;
 }
-

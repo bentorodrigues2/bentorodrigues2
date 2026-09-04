@@ -2153,17 +2153,17 @@ export function PortalCondomino({
                 </div>
 
                 <div className="space-y-1 text-slate-700 font-sans">
-                  <p><strong>De:</strong> {(predio as any).email_administracao || (predio as any).email || "administracao@condomanager.pt"}</p>
+                  <p><strong>De:</strong> {(predio as any).email_administracao || (predio as any).email || "administracao@condomanagerai.com"}</p>
                   <p><strong>Para:</strong> {welcomeMailModal.fracao.proprietario.email}</p>
-                  <p><strong>Assunto:</strong> Boas Vindas e Acessos — Condomínio {predio.nome}</p>
+                  <p><strong>Assunto:</strong> Boas Vindas e Acessos</p>
                 </div>
                 <hr className="border-emerald-200/80" />
 
-                <div className="space-y-3 text-slate-700 font-sans leading-relaxed relative z-10">
+                <div className="space-y-3 text-slate-700 font-sans leading-relaxed relative z-10 text-xs">
                   <p>Olá <strong>{welcomeMailModal.fracao.proprietario.nome}</strong>,</p>
                   <p>Espero que se encontre bem.</p>
-                  <p>O meu nome é José Carlos Guerra, administrador do nosso prédio e também seu vizinho no 3ºE. Disponibilizo o meu contacto direto (919943465) para qualquer assunto urgente ou questão que possa surgir.</p>
-                  <p>Informo que a sua conta no CondoManager AI foi criada com sucesso. Pode aceder à sua área reservada através do link: <a href="https://condomanager.pt/pwa/login" target="_blank" rel="noreferrer" className="text-emerald-600 font-bold underline">https://condomanager.pt/pwa/login</a>.</p>
+                  <p>O meu nome é José Carlos Guerra, administrador do nosso prédio e também seu vizinho no 3ºE. Disponibilizo o meu contacto direto (<strong>919943465</strong>) para qualquer assunto urgente ou questão que possa surgir.</p>
+                  <p>Informo que a sua conta no CondoManager AI foi criada com sucesso. Pode aceder à sua área reservada através do link: <a href="https://bentorodrigues2.condomanagerai.com" target="_blank" rel="noreferrer" className="text-emerald-600 font-bold underline">https://bentorodrigues2.condomanagerai.com</a> e pode baixar a aplicação <a href="https://bentorodrigues2.condomanagerai.com" target="_blank" rel="noreferrer" className="text-emerald-600 font-bold underline">AQUI</a> (Link para baixar/instalar PWA).</p>
                   <p>Através desta plataforma — acessível via computador ou telemóvel — poderá acompanhar toda a atividade do condomínio, consultar documentos, reportar avarias, enviar comprovativos de pagamento e comunicar diretamente comigo. A sua participação ativa é fundamental para a gestão transparente do nosso prédio.</p>
                   
                   <div className="bg-white/80 backdrop-blur-xs border border-slate-200 p-3 rounded-lg space-y-1.5 text-[11px]">
@@ -2173,10 +2173,10 @@ export function PortalCondomino({
                   </div>
 
                   {/* Attachment indicator box */}
-                  <div className="bg-emerald-100/80 border border-emerald-300 p-2.5 rounded-lg flex items-center justify-between">
+                  <div className="bg-emerald-50 border border-emerald-300 p-2.5 rounded-lg flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-[11px] text-emerald-950">
                       <i className="fa-solid fa-file-pdf text-red-500 text-lg shrink-0"></i>
-                      <span>Anexo (PDF): <strong>Instrucoes_e_Funcionalidades_PWA_Condomino.pdf</strong></span>
+                      <span>Anexo (PDF): <strong>Instrucoes_Site_e_PWA_Condomino.pdf</strong></span>
                     </div>
                     <button
                       type="button"
@@ -2189,6 +2189,7 @@ export function PortalCondomino({
 
                   <div className="bg-white/80 backdrop-blur-xs border border-slate-200 p-3 rounded-lg font-mono-custom text-[11px] text-slate-800 space-y-1">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dados de Acesso:</p>
+                    <p><strong>Link:</strong> <a href="https://bentorodrigues2.condomanagerai.com" target="_blank" rel="noreferrer" className="text-emerald-600 underline font-semibold">https://bentorodrigues2.condomanagerai.com</a></p>
                     <p><strong>Utilizador:</strong> {welcomeMailModal.fracao.proprietario.email}</p>
                     <p className="text-indigo-600 font-bold"><strong>Password Provisória:</strong> {welcomeMailModal.pass}</p>
                     <p className="text-[10px] text-slate-500 font-sans italic pt-1">(Por razões de segurança, ser-lhe-á solicitado que altere esta palavra-passe no seu primeiro acesso.)</p>
@@ -2196,7 +2197,7 @@ export function PortalCondomino({
 
                   <p>Qualquer dúvida adicional, estou ao dispor.</p>
 
-                  {/* Signature Section with Digital Signature Badge */}
+                  {/* Signature Section */}
                   <div className="pt-3 border-t border-slate-200 space-y-1">
                     <p className="text-slate-700 text-xs">Com os meus cumprimentos,</p>
                     <div className="flex items-center gap-2 pt-1">

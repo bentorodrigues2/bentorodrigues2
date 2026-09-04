@@ -15,6 +15,8 @@ interface UserSecuritySubmenuProps {
   defaultOpen?: boolean;
   isFirstAccessMode?: boolean;
   onPasswordChangeSuccess?: () => void;
+  showTestingBar?: boolean;
+  setShowTestingBar?: (val: boolean) => void;
 }
 
 export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
@@ -27,7 +29,9 @@ export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
   className = "",
   defaultOpen = false,
   isFirstAccessMode = false,
-  onPasswordChangeSuccess
+  onPasswordChangeSuccess,
+  showTestingBar,
+  setShowTestingBar
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(defaultOpen || isFirstAccessMode);
 
@@ -482,6 +486,38 @@ export const UserSecuritySubmenu: React.FC<UserSecuritySubmenuProps> = ({
                 <span>Guardar Preferências de Notificação</span>
               </button>
             </form>
+          </div>
+
+          {/* 5. OPÇÕES DE DESENVOLVIMENTO / TESTES DE PERFIS */}
+          <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center space-x-2 text-slate-800 dark:text-white font-extrabold text-[11px] uppercase tracking-wider">
+              <Shield className="h-3.5 w-3.5 text-indigo-500" />
+              <span>5. Modo de Testes & Simulador de Perfis</span>
+            </div>
+            
+            <div className="bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 p-3 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="font-extrabold text-[10px] text-slate-800 dark:text-white block">Barra Superior de Simulação de Perfis</span>
+                <span className="text-[8.5px] text-slate-500 dark:text-slate-400 block max-w-xs">
+                  Ativa a barra superior de troca rápida de papel (Admin, Condómino, Inquilino, Técnico). Desative para visualização real em produção.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const newVal = !(showTestingBar ?? (localStorage.getItem("condomanager_show_testing_bar") !== "false"));
+                  if (setShowTestingBar) setShowTestingBar(newVal);
+                  localStorage.setItem("condomanager_show_testing_bar", String(newVal));
+                }}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                  (showTestingBar ?? (localStorage.getItem("condomanager_show_testing_bar") !== "false")) ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-800"
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ${
+                  (showTestingBar ?? (localStorage.getItem("condomanager_show_testing_bar") !== "false")) ? "translate-x-4" : "translate-x-0"
+                }`} />
+              </button>
+            </div>
           </div>
 
         </div>

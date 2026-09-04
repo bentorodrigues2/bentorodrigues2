@@ -1,8 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import { jsPDF } from "jspdf";
 import { Predio, Fracao, Reuniao, LoggedUser, ReuniaoAssinatura } from "../types";
-import { formatDatePT, formatDateISO, copyTextToClipboard, exportToXLS, downloadBlob, generateAndDownloadPdf, addPdfWatermark, addPdfHeaderWithLogo } from "../utils";
+import { 
+  formatDatePT, 
+  formatDateISO, 
+  copyTextToClipboard, 
+  exportToXLS, 
+  downloadBlob, 
+  generateAndDownloadPdf, 
+  addPdfWatermark, 
+  addPdfHeaderWithLogo,
+  gerarConvocatoriaOficialPDF,
+  exportarBalanceteMapaAnualXLS
+} from "../utils";
 import { triggerSendReaction } from "./SendingReactionModal";
+import { VotacaoAssembleiaVirtual } from "./VotacaoAssembleiaVirtual";
 
 interface GestaoAssembleiasProps {
   predio: Predio;
@@ -32,7 +44,7 @@ export function GestaoAssembleias({ predio, fracoes, reunioes, onAddReuniao, set
 
   // Active meeting detail selection (Bloco 6 workspace)
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"quorum" | "ata" | "assinaturas">("quorum");
+  const [activeTab, setActiveTab] = useState<"quorum" | "votacoes" | "ata" | "assinaturas">("quorum");
 
   // Local states for detailed minutes editing
   const [notasAta, setNotasAta] = useState("");
@@ -1125,7 +1137,29 @@ Powered by CondoManager AI`;
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3 no-print animate-fadeIn">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Visualização do E-mail de Convocatória Oficial</h4>
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-2">
+              <button 
+                type="button" 
+                onClick={() => {
+                  const mockReuniao: Reuniao = {
+                    id_reuniao: "temp",
+                    id_predio: predio.id_predio,
+                    tema: tema || "Assembleia Geral de Condóminos",
+                    data: data || formatDatePT(new Date().toISOString()),
+                    hora: hora || "20:30",
+                    ordens_trabalho: ordensTrabalho || "1. Apreciação e votação do Relatório e Contas;\n2. Aprovação do Orçamento;\n3. Assuntos Gerais.",
+                    estado: "Agendada",
+                    isVideoconferencia,
+                    plataformaVideoconferencia: plataformaVideo,
+                    linkVideoconferencia: linkVideo
+                  };
+                  gerarConvocatoriaOficialPDF(predio, mockReuniao, fracoes, loggedUser?.nome);
+                }} 
+                className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                <img src="/marca/18-pdf.png" alt="PDF" className="w-3.5 h-3.5 object-contain" />
+                <span>Descarregar Convocatória PDF</span>
+              </button>
               <button type="button" onClick={copiarTexto} className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 cursor-pointer">
                 <i className="fa-solid fa-copy mr-1.5"></i> Copiar Texto
               </button>
@@ -1261,20 +1295,43 @@ Powered by CondoManager AI`;
                 </div>
               )}
 
-              {/* Bloco 6 Interactive Workspace Action */}
-              <div className="flex justify-between items-center border-t border-slate-100 pt-3 no-print">
-                <p className="text-xs text-slate-500">
-                  <i className="fa-solid fa-info-circle mr-1"></i>
-                  Quórum atual registado: <span className="font-bold text-slate-700 font-mono-custom">{r.id_reuniao === selectedMeetingId ? activeQuorum : (r.folha_presencas ? Object.entries(r.folha_presencas).reduce((acc, [fid, val]) => val !== "Ausente" ? acc + (fracoes.find(f => f.id_fracao === fid)?.permilagem || 0) : acc, 0) : 0)}‰</span>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setSelectedMeetingId(r.id_reuniao === selectedMeetingId ? null : r.id_reuniao)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${selectedMeetingId === r.id_reuniao ? "bg-slate-800 text-white" : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700"}`}
-                >
-                  <i className="fa-solid fa-clipboard-list text-sm"></i>
-                  <span>{selectedMeetingId === r.id_reuniao ? "Ocultar Espaço de Trabalho" : "Gerir Quórum, Atas & Assinaturas"}</span>
-                </button>
+              {/* Bloco 6 Interactive Workspace Action & Document Export Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100 pt-3 no-print">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => gerarConvocatoriaOficialPDF(predio, r, fracoes, loggedUser?.nome)}
+                    className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    title="Descarregar Convocatória Oficial de Assembleia em PDF estruturado com Procuração anexa"
+                  >
+                    <img src="/marca/18-pdf.png" alt="PDF" className="w-3.5 h-3.5 object-contain" />
+                    <span>Convocatória Oficial (PDF)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => exportarBalanceteMapaAnualXLS(predio, fracoes, 2026)}
+                    className="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    title="Descarregar Grelha das 12 Quotas Mensais de todas as Frações num ficheiro Excel/CSV para a Assembleia"
+                  >
+                    <img src="/modulos/66-exportacao-financeira.png" alt="Excel" className="w-3.5 h-3.5 object-contain" onError={(e) => { e.currentTarget.src = "/marca/18-pdf.png"; }} />
+                    <span>Mapa Anual / Balancete (.CSV)</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <p className="text-xs text-slate-500 hidden md:block">
+                    Quórum: <span className="font-bold text-slate-700 font-mono-custom">{r.id_reuniao === selectedMeetingId ? activeQuorum : (r.folha_presencas ? Object.entries(r.folha_presencas).reduce((acc, [fid, val]) => val !== "Ausente" ? acc + (fracoes.find(f => f.id_fracao === fid)?.permilagem || 0) : acc, 0) : 0)}‰</span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMeetingId(r.id_reuniao === selectedMeetingId ? null : r.id_reuniao)}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 ${selectedMeetingId === r.id_reuniao ? "bg-slate-800 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"}`}
+                  >
+                    <i className="fa-solid fa-clipboard-list text-sm"></i>
+                    <span>{selectedMeetingId === r.id_reuniao ? "Fechar Espaço de Trabalho" : "Gerir Quórum, Atas & Assinaturas"}</span>
+                  </button>
+                </div>
               </div>
 
               {/* EXPANDED INTERACTIVE MEETING WORKSPACE */}
@@ -1288,6 +1345,13 @@ Powered by CondoManager AI`;
                       className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${activeTab === "quorum" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}
                     >
                       <i className="fa-solid fa-users mr-1.5"></i> Folha de Presenças & Quórum
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("votacoes")}
+                      className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-colors ${activeTab === "votacoes" ? "border-emerald-500 text-emerald-600" : "border-transparent text-slate-400 hover:text-slate-600"}`}
+                    >
+                      <i className="fa-solid fa-check-to-slot mr-1.5"></i> Votações em Tempo Real (‰)
                     </button>
                     <button
                       type="button"
@@ -1434,6 +1498,22 @@ Powered by CondoManager AI`;
                           </tbody>
                         </table>
                       </div>
+                    </div>
+                  )}
+
+                  {/* TAB CONTENT: VOTACOES EM TEMPO REAL */}
+                  {activeTab === "votacoes" && (
+                    <div className="space-y-4">
+                      <VotacaoAssembleiaVirtual
+                        predio={predio}
+                        fracoes={predioFracoes}
+                        reuniao={activeMeeting}
+                        loggedUser={loggedUser}
+                        onIntegrarNaAta={(textoDeliberacoes) => {
+                          setNotasAta(prev => `${prev ? prev + "\n\n" : ""}${textoDeliberacoes}`);
+                          setActiveTab("ata");
+                        }}
+                      />
                     </div>
                   )}
 

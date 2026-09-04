@@ -172,7 +172,8 @@ export function GestaoEmissao({ predio, fracoes, avisos, setAvisos, documentos, 
       proprietarioNome: customCondomino || frac?.proprietario?.nome || "Condómino Registado",
       proprietarioNif: frac?.proprietario?.nif || "200000000",
       fracaoIdent: `Fração ${frac?.fracao_nome || "A"} (${frac?.piso || "Piso 1"})`,
-      metodoPagamento: "Transferência Bancária / Multibanco",
+      referenciaFracao: customRefBR23E || `BR2-${frac?.fracao_nome || "FRA"}`,
+      metodoPagamento: "Transferência Bancária",
       quotaMensalVal: isExtra ? 0 : customQuotaMensal,
       fundoReservaVal: isExtra ? 0 : Number((customQuotaMensal * 0.10).toFixed(2)),
       quotaExtraVal: isExtra ? customQuotaExtra || selectedAviso.valor : 0,
@@ -222,7 +223,7 @@ export function GestaoEmissao({ predio, fracoes, avisos, setAvisos, documentos, 
           `${docType === "RECIBO" ? "RECIBO" : "AVISO DE COBRANÇA DE QUOTA"} - Fração ${selectedAviso.fracao_nome}`,
           [
             { heading: "Discriminação da Liquidação", content: `Aviso nº: ${selectedAviso.id_aviso}\nFração: ${selectedAviso.fracao_nome}\nValor: ${selectedAviso.valor.toFixed(2)} €\nPeríodo: ${selectedAviso.mes_referencia || "Quotas do Condomínio"}\nEstado: ${selectedAviso.pago ? "LIQUIDADO / QUITADO" : "PENDENTE DE PAGAMENTO"}` },
-            { heading: "Dados de Pagamento MB WAY / Referência", content: `Entidade: 21234 | Referência: 123 456 789\nTelemóvel MB WAY: 910 000 000` }
+            { heading: "Dados para Pagamento (Transferência Bancária)", content: `IBAN do Condomínio: ${customIban || predio.iban || "PT50 0033 0000 12345678901 02"}\nReferência Obrigatória no Descritivo (IA): ${customRefBR23E || `BR2-${selectedAviso.fracao_nome}`}` }
           ],
           `${docType}_${selectedAviso.fracao_nome}_${selectedAviso.id_aviso}.pdf`,
           [{ label: "Edifício", value: predio.nome }, { label: "Data de Emissão", value: formatDatePT(selectedAviso.data_emissao) }]
